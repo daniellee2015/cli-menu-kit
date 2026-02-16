@@ -5,7 +5,7 @@
 
 import { RadioMenuConfig, RadioMenuResult, MenuOption } from '../../types/menu.types.js';
 import { LAYOUT_PRESETS } from '../../types/layout.types.js';
-import { initTerminal, restoreTerminal, clearMenu, TerminalState } from '../../core/terminal.js';
+import { initTerminal, restoreTerminal, clearMenu, TerminalState, writeLine } from '../../core/terminal.js';
 import { KEY_CODES, isEnter, isCtrlC, isNumberKey, isLetterKey, normalizeLetter } from '../../core/keyboard.js';
 import { renderHeader, renderOption, renderInputPrompt, renderHints, renderBlankLines, renderSectionLabel } from '../../core/renderer.js';
 import { colors } from '../../core/colors.js';
@@ -26,7 +26,6 @@ function generateHints(allowNumberKeys: boolean, allowLetterKeys: boolean): stri
   }
 
   hints.push(t('hints.enter'));
-  hints.push(`${colors.red}${t('hints.exit')}${colors.reset}`);
 
   return hints;
 }
@@ -136,12 +135,25 @@ export async function showRadioMenu(config: RadioMenuConfig): Promise<RadioMenuR
               // Render section label
               renderSectionLabel(item.label);
             } else {
-              // Extract number prefix if exists
-              const match = item.value.match(/^(\d+)\.\s*/);
-              const prefix = match ? '' : `${selectableIndices.indexOf(index) + 1}. `;
+              // Check if option starts with a number or letter prefix
+              const numberMatch = item.value.match(/^(\d+)\.\s*/);
+              const letterMatch = item.value.match(/^([a-zA-Z])\.\s*/);
+
+              // Don't add prefix if option already has number or letter prefix
+              const prefix = (numberMatch || letterMatch) ? '' : `${selectableIndices.indexOf(index) + 1}. `;
+
+              // Check if this is an Exit option (contains "Exit" or "Quit")
+              const isExitOption = /\b(exit|quit)\b/i.test(item.value);
+              const displayValue = isExitOption ? `${colors.red}${item.value}${colors.reset}` : item.value;
 
               // For radio menus, don't show selection indicator (pass undefined instead of false)
-              renderOption(item.value, undefined as any, index === selectedIndex, prefix);
+              renderOption(displayValue, undefined as any, index === selectedIndex, prefix);
+
+              // Add blank line after last item before next separator
+              const nextIndex = index + 1;
+              if (nextIndex < optionData.length && optionData[nextIndex].isSeparator) {
+                writeLine('');
+              }
             }
             lineCount++;
           });

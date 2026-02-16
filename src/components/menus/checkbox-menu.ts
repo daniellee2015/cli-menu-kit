@@ -26,7 +26,6 @@ function generateHints(allowSelectAll: boolean, allowInvert: boolean): string[] 
   }
 
   hints.push(t('hints.enter'));
-  hints.push(`${colors.red}${t('hints.exit')}${colors.reset}`);
 
   return hints;
 }

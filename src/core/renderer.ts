@@ -146,7 +146,6 @@ export function renderSectionLabel(label?: string): void {
 
     const line = `  ${colors.dim}${'─'.repeat(dashesLeft)}${labelWithPadding}${'─'.repeat(dashesRight)}${colors.reset}`;
     writeLine(line);
-    writeLine(''); // Blank line after separator
   } else {
     writeLine('');
   }

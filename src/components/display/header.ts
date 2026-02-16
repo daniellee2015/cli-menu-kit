@@ -92,6 +92,5 @@ export function renderHeader(config: HeaderConfig): void {
   // Menu title (optional)
   if (menuTitle) {
     writeLine(`${color}  ${menuTitle}${colors.reset}`);
-    writeLine('');
   }
 }
