@@ -79,18 +79,20 @@ export function renderHeader(config: HeaderConfig): void {
   // Bottom border
   writeLine(`${boldColor}╚${'═'.repeat(boxWidth - 2)}╝${colors.reset}`);
 
-  // Version and URL (outside the box, dimmed)
-  if (version || url) {
-    const versionText = version ? `Version: ${version}` : '';
-    const urlText = url || '';
-    const separator = version && url ? '  |  ' : '';
-    writeLine(`${colors.dim}  ${versionText}${separator}${urlText}${colors.reset}`);
-  }
-
+  // Blank line after box
   writeLine('');
+
+  // Version and URL (outside the box, with colors)
+  if (version || url) {
+    const versionText = version ? `${colors.cyan}Version: ${version}${colors.reset}` : '';
+    const urlText = url ? `${colors.blue}${url}${colors.reset}` : '';
+    const separator = version && url ? `${colors.dim}  |  ${colors.reset}` : '';
+    writeLine(`  ${versionText}${separator}${urlText}`);
+  }
 
   // Menu title (optional)
   if (menuTitle) {
+    writeLine('');
     writeLine(`${color}  ${menuTitle}${colors.reset}`);
   }
 }
