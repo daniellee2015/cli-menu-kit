@@ -3,7 +3,7 @@
  * Provides utilities for rendering menu components
  */
 
-import { colors } from './colors.js';
+import { colors, uiColors } from './colors.js';
 import { writeLine, write } from './terminal.js';
 
 /**
@@ -46,19 +46,19 @@ export function renderOption(
 
   // Add cursor indicator if highlighted
   if (isHighlighted) {
-    line += `${colors.cyan}❯ ${colors.reset}`;
+    line += `${uiColors.cursor}❯ ${colors.reset}`;
   } else {
     line += '  ';
   }
 
   // Add checkbox for multi-select
   if (isSelected !== undefined && typeof isSelected === 'boolean') {
-    line += isSelected ? `${colors.green}◉${colors.reset} ` : `${colors.dim}○${colors.reset} `;
+    line += isSelected ? `${uiColors.selected}◉${colors.reset} ` : `${uiColors.disabled}○${colors.reset} `;
   }
 
   // Add prefix if provided
   if (prefix) {
-    line += `${colors.dim}${prefix}${colors.reset}`;
+    line += `${uiColors.prefix}${prefix}${colors.reset}`;
   }
 
   // Add option text
@@ -68,14 +68,14 @@ export function renderOption(
   const description = parts.length > 1 ? parts.slice(1).join(' - ') : '';
 
   if (isHighlighted) {
-    line += `${colors.cyan}${mainText}${colors.reset}`;
+    line += `${uiColors.primary}${mainText}${colors.reset}`;
     if (description) {
-      line += ` ${colors.dim}- ${description}${colors.reset}`;
+      line += ` ${uiColors.textSecondary}- ${description}${colors.reset}`;
     }
   } else {
     line += mainText;
     if (description) {
-      line += ` ${colors.dim}- ${description}${colors.reset}`;
+      line += ` ${uiColors.textSecondary}- ${description}${colors.reset}`;
     }
   }
 
@@ -155,7 +155,7 @@ export function renderSectionLabel(label?: string): void {
     const dashesLeft = Math.floor(dashesTotal / 2);
     const dashesRight = dashesTotal - dashesLeft;
 
-    const line = `  ${colors.dim}${'─'.repeat(dashesLeft)}${labelWithPadding}${'─'.repeat(dashesRight)}${colors.reset}`;
+    const line = `  ${uiColors.separator}${'─'.repeat(dashesLeft)}${labelWithPadding}${'─'.repeat(dashesRight)}${colors.reset}`;
     writeLine(line);
   } else {
     writeLine('');

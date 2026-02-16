@@ -8,7 +8,7 @@ import { LAYOUT_PRESETS } from '../../types/layout.types.js';
 import { initTerminal, restoreTerminal, clearMenu, TerminalState, writeLine } from '../../core/terminal.js';
 import { KEY_CODES, isEnter, isCtrlC, isNumberKey, isLetterKey, normalizeLetter } from '../../core/keyboard.js';
 import { renderHeader, renderOption, renderInputPrompt, renderHints, renderBlankLines, renderSectionLabel } from '../../core/renderer.js';
-import { colors } from '../../core/colors.js';
+import { colors, uiColors } from '../../core/colors.js';
 import { t } from '../../i18n/registry.js';
 
 /**
@@ -144,7 +144,7 @@ export async function showRadioMenu(config: RadioMenuConfig): Promise<RadioMenuR
 
               // Check if this is an Exit option (contains "Exit" or "Quit")
               const isExitOption = /\b(exit|quit)\b/i.test(item.value);
-              const displayValue = isExitOption ? `${colors.red}${item.value}${colors.reset}` : item.value;
+              const displayValue = isExitOption ? `${uiColors.error}${item.value}${colors.reset}` : item.value;
 
               // For radio menus, don't show selection indicator (pass undefined instead of false)
               renderOption(displayValue, undefined as any, index === selectedIndex, prefix);

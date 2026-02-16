@@ -3,7 +3,7 @@
  * Displays ASCII art, title, description, version and URL
  */
 
-import { colors } from '../../core/colors.js';
+import { colors, uiColors } from '../../core/colors.js';
 import { writeLine } from '../../core/terminal.js';
 
 /**
@@ -41,7 +41,7 @@ export function renderHeader(config: HeaderConfig): void {
     url,
     menuTitle,
     boxWidth = 60,
-    color = colors.cyan
+    color = uiColors.border
   } = config;
 
   const boldColor = `${color}${colors.bold}`;
@@ -71,7 +71,7 @@ export function renderHeader(config: HeaderConfig): void {
 
   // Description (left-aligned with 2 spaces padding, gray text)
   if (description) {
-    const paddedDesc = `  ${colors.dim}${description}${colors.reset}`.padEnd(boxWidth - 2 + colors.dim.length + colors.reset.length, ' ');
+    const paddedDesc = `  ${uiColors.textSecondary}${description}${colors.reset}`.padEnd(boxWidth - 2 + uiColors.textSecondary.length + colors.reset.length, ' ');
     writeLine(`${boldColor}║${paddedDesc}║${colors.reset}`);
     writeLine(`${boldColor}║${' '.repeat(boxWidth - 2)}║${colors.reset}`);
   }
@@ -84,9 +84,9 @@ export function renderHeader(config: HeaderConfig): void {
 
   // Version and URL (outside the box, with colors)
   if (version || url) {
-    const versionText = version ? `${colors.cyan}Version: ${version}${colors.reset}` : '';
-    const urlText = url ? `${colors.blue}${url}${colors.reset}` : '';
-    const separator = version && url ? `${colors.dim}  |  ${colors.reset}` : '';
+    const versionText = version ? `${uiColors.info}Version: ${version}${colors.reset}` : '';
+    const urlText = url ? `${uiColors.accent}${url}${colors.reset}` : '';
+    const separator = version && url ? `${uiColors.textSecondary}  |  ${colors.reset}` : '';
     writeLine(`  ${versionText}${separator}${urlText}`);
   }
 

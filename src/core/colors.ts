@@ -51,6 +51,37 @@ export const colors = {
 } as const;
 
 /**
+ * Semantic color hierarchy for UI elements
+ * Defines consistent colors for different levels of information
+ */
+export const uiColors = {
+  // Primary elements
+  primary: colors.cyan,           // Main interactive elements, highlights
+  accent: colors.blue,            // Secondary highlights, links
+
+  // Text hierarchy
+  textPrimary: colors.reset,      // Main text (black/default)
+  textSecondary: colors.dim,      // Descriptions, hints, less important text
+  textMuted: colors.brightBlack,  // Very subtle text
+
+  // Status colors
+  success: colors.green,          // Success states, confirmations
+  error: colors.red,              // Errors, warnings, exit
+  warning: colors.yellow,         // Warnings, cautions
+  info: colors.blue,              // Informational messages
+
+  // Interactive elements
+  cursor: colors.cyan,            // Cursor indicator
+  selected: colors.green,         // Selected items
+  disabled: colors.dim,           // Disabled/inactive items
+
+  // Structural elements
+  border: colors.cyan,            // Borders, frames
+  separator: colors.dim,          // Separators, dividers
+  prefix: colors.dim              // Number/letter prefixes
+} as const;
+
+/**
  * RGB color representation
  */
 interface RGB {
