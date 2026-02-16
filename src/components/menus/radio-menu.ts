@@ -153,6 +153,7 @@ export async function showRadioMenu(config: RadioMenuConfig): Promise<RadioMenuR
               const nextIndex = index + 1;
               if (nextIndex < optionData.length && optionData[nextIndex].isSeparator) {
                 writeLine('');
+                lineCount++; // Count the blank line
               }
             }
             lineCount++;
