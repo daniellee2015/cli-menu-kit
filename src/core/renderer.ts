@@ -62,10 +62,21 @@ export function renderOption(
   }
 
   // Add option text
+  // Split text by " - " to separate main text from description
+  const parts = text.split(' - ');
+  const mainText = parts[0];
+  const description = parts.length > 1 ? parts.slice(1).join(' - ') : '';
+
   if (isHighlighted) {
-    line += `${colors.cyan}${text}${colors.reset}`;
+    line += `${colors.cyan}${mainText}${colors.reset}`;
+    if (description) {
+      line += ` ${colors.dim}- ${description}${colors.reset}`;
+    }
   } else {
-    line += text;
+    line += mainText;
+    if (description) {
+      line += ` ${colors.dim}- ${description}${colors.reset}`;
+    }
   }
 
   writeLine(line);

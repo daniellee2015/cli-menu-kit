@@ -62,16 +62,16 @@ export function renderHeader(config: HeaderConfig): void {
     writeLine(`${boldColor}║${' '.repeat(boxWidth - 2)}║${colors.reset}`);
   }
 
-  // Title (left-aligned with 2 spaces padding)
+  // Title (left-aligned with 2 spaces padding, black text)
   if (title) {
     const paddedTitle = `  ${title}`.padEnd(boxWidth - 2, ' ');
-    writeLine(`${boldColor}║${paddedTitle}║${colors.reset}`);
+    writeLine(`${boldColor}║${colors.reset}${paddedTitle}${boldColor}║${colors.reset}`);
     writeLine(`${boldColor}║${' '.repeat(boxWidth - 2)}║${colors.reset}`);
   }
 
-  // Description (left-aligned with 2 spaces padding)
+  // Description (left-aligned with 2 spaces padding, gray text)
   if (description) {
-    const paddedDesc = `  ${description}`.padEnd(boxWidth - 2, ' ');
+    const paddedDesc = `  ${colors.dim}${description}${colors.reset}`.padEnd(boxWidth - 2 + colors.dim.length + colors.reset.length, ' ');
     writeLine(`${boldColor}║${paddedDesc}║${colors.reset}`);
     writeLine(`${boldColor}║${' '.repeat(boxWidth - 2)}║${colors.reset}`);
   }
