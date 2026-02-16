@@ -71,8 +71,9 @@ export function renderHeader(config: HeaderConfig): void {
 
   // Description (left-aligned with 2 spaces padding, gray text)
   if (description) {
-    const paddedDesc = `  ${uiColors.textSecondary}${description}${colors.reset}`.padEnd(boxWidth - 2 + uiColors.textSecondary.length + colors.reset.length, ' ');
-    writeLine(`${boldColor}║${paddedDesc}║${colors.reset}`);
+    const textContent = `  ${description}`;
+    const paddedText = textContent.padEnd(boxWidth - 2, ' ');
+    writeLine(`${boldColor}║${uiColors.textSecondary}${paddedText}${colors.reset}${boldColor}║${colors.reset}`);
     writeLine(`${boldColor}║${' '.repeat(boxWidth - 2)}║${colors.reset}`);
   }
 
