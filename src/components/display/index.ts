@@ -5,8 +5,10 @@
 
 export {
   renderSimpleHeader,
+  renderSectionHeader,
   renderAsciiHeader,
   createSimpleHeader,
+  createSectionHeader,
   createAsciiHeader
 } from './headers.js';
 

@@ -25,8 +25,10 @@ export {
 // Export display components
 export {
   renderSimpleHeader,
+  renderSectionHeader,
   renderAsciiHeader,
   createSimpleHeader,
+  createSectionHeader,
   createAsciiHeader,
   renderProgressIndicator,
   renderStageHeader,
