@@ -43,7 +43,9 @@ export {
   createMessage,
   renderSummaryTable,
   createSummaryTable,
-  createSimpleSummary
+  createSimpleSummary,
+  renderHeader,
+  type HeaderConfig
 } from './components/display/index.js';
 
 // Export features

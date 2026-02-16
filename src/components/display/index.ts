@@ -34,3 +34,8 @@ export {
   createSummaryTable,
   createSimpleSummary
 } from './summary.js';
+
+export {
+  renderHeader,
+  type HeaderConfig
+} from './header.js';
