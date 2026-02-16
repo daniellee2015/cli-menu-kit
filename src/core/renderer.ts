@@ -102,7 +102,20 @@ export function renderInputPrompt(
 export function renderHints(hints: string[]): void {
   if (hints.length === 0) return;
 
-  const hintLine = `  ${colors.dim}${hints.join(' • ')}${colors.reset}`;
+  // Format each hint: symbols/numbers in black, text in gray
+  const formattedHints = hints.map(hint => {
+    const parts = hint.split(' ');
+    if (parts.length >= 2) {
+      // First part (symbols/numbers) in normal color, rest in dim
+      const symbols = parts[0];
+      const text = parts.slice(1).join(' ');
+      return `${symbols} ${colors.dim}${text}${colors.reset}`;
+    }
+    // If no space, keep entire hint in dim
+    return `${colors.dim}${hint}${colors.reset}`;
+  });
+
+  const hintLine = `  ${formattedHints.join(' • ')}`;
   writeLine(hintLine);
 }
 
