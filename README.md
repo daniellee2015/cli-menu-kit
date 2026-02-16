@@ -1,20 +1,402 @@
 # CLI Menu Kit
 
-A lightweight, modular CLI menu system for Node.js with TypeScript support. Zero dependencies, pure Node.js implementation.
+A comprehensive, modular CLI menu system for Node.js with full TypeScript support. Zero dependencies, pure Node.js implementation with advanced features including i18n, wizards, and command handling.
 
 ## Features
 
-- ✅ **Single-select menus** with arrow keys and number/letter shortcuts
-- ✅ **Multi-select menus** with checkboxes and batch operations
-- ✅ **Yes/No confirmations** with horizontal selection
-- ✅ **Text input** with validation support
-- ✅ **Number input** with min/max constraints
-- ✅ **Parent-child menus** for hierarchical navigation
-- ✅ **Unified API** for convenient access
-- ✅ **Bilingual support** (Chinese/English)
-- ✅ **Fully typed** with TypeScript
-- ✅ **Zero dependencies** - pure Node.js
-- ✅ **Modular architecture** - all files under 300 lines
+### Menu Components
+- ✅ **RadioMenu** - Single-select vertical menu with arrow/number/letter navigation
+- ✅ **CheckboxMenu** - Multi-select with checkboxes, select all, and invert
+- ✅ **BooleanMenu** - Yes/No selection (horizontal and vertical)
+
+### Input Components
+- ✅ **TextInput** - Single-line text with validation and constraints
+- ✅ **NumberInput** - Numeric input with min/max validation
+- ✅ **LanguageSelector** - Specialized language picker
+- ✅ **ModifyField** - Composite field modification prompt
+
+### Display Components
+- ✅ **Headers** - Simple and ASCII art headers with borders
+- ✅ **Progress** - Step indicators, stage headers, separators
+- ✅ **Messages** - Success/Error/Warning/Info/Question with icons
+- ✅ **Summary** - Bordered tables with sections and key-value pairs
+
+### Advanced Features
+- ✅ **Wizard System** - Multi-step configuration flows with progress tracking
+- ✅ **i18n Support** - Chinese and English translations (extensible)
+- ✅ **Command Handling** - Built-in commands (/quit, /help, /clear, /back)
+- ✅ **Layout System** - Flexible component composition
+- ✅ **Color System** - Single colors and two-color gradients
+- ✅ **Unified API** - Simple, consistent interface for all components
+
+### Core Principles
+- ✅ **Zero dependencies** - Pure Node.js
+- ✅ **Fully typed** - Complete TypeScript support
+- ✅ **Modular architecture** - All files under 300 lines
+- ✅ **Component-based** - Reusable, composable components
+- ✅ **Type-safe** - Strict TypeScript with full type definitions
+
+## Installation
+
+```bash
+npm install cli-menu-kit
+```
+
+## Quick Start
+
+### Unified API (Recommended)
+
+```javascript
+import { menu, input, wizard } from 'cli-menu-kit';
+
+// Radio menu (single-select)
+const result = await menu.radio({
+  title: 'Select Framework',
+  options: ['React', 'Vue', 'Angular', 'Svelte']
+});
+console.log(`Selected: ${result.value}`);
+
+// Checkbox menu (multi-select)
+const features = await menu.checkbox({
+  options: ['TypeScript', 'ESLint', 'Prettier', 'Testing'],
+  minSelections: 1
+});
+console.log(`Selected: ${features.values.join(', ')}`);
+
+// Boolean menu (yes/no)
+const confirmed = await menu.booleanH('Continue?', true);
+console.log(`Confirmed: ${confirmed}`);
+
+// Text input
+const name = await input.text({
+  prompt: 'Enter your name',
+  defaultValue: 'User',
+  minLength: 2
+});
+
+// Number input
+const age = await input.number({
+  prompt: 'Enter your age',
+  min: 1,
+  max: 120
+});
+
+// Language selector
+const lang = await input.language({
+  languages: [
+    { code: 'zh', name: 'Chinese', nativeName: '简体中文' },
+    { code: 'en', name: 'English' }
+  ]
+});
+
+// Wizard (multi-step flow)
+const result = await wizard.run({
+  steps: [
+    {
+      name: 'language',
+      title: 'Select Language',
+      component: 'language-selector',
+      config: { /* ... */ }
+    },
+    {
+      name: 'projectName',
+      title: 'Project Name',
+      component: 'text-input',
+      config: { prompt: 'Enter project name' }
+    }
+  ]
+});
+```
+
+### Display Components
+
+```javascript
+import {
+  createSimpleHeader,
+  createAsciiHeader,
+  createProgressIndicator,
+  showSuccess,
+  showError,
+  showWarning,
+  showInfo,
+  createSummaryTable
+} from 'cli-menu-kit';
+
+// Simple header
+createSimpleHeader('My Application', '\x1b[36m');
+
+// ASCII header
+createAsciiHeader(asciiArt, {
+  subtitle: 'Version 1.0.0',
+  url: 'https://github.com/user/repo'
+});
+
+// Progress indicator
+createProgressIndicator(['Step 1', 'Step 2', 'Step 3'], 1);
+
+// Messages
+showSuccess('Operation completed!');
+showError('Something went wrong');
+showWarning('Please check your input');
+showInfo('Press Ctrl+C to exit');
+
+// Summary table
+createSummaryTable('Session Summary', [
+  {
+    header: 'Statistics',
+    items: [
+      { key: 'Total', value: '100' },
+      { key: 'Success', value: '95' }
+    ]
+  }
+]);
+```
+
+### i18n Support
+
+```javascript
+import { setLanguage, t } from 'cli-menu-kit';
+
+// Set language
+setLanguage('en'); // or 'zh'
+
+// Get translations
+const prompt = t('menus.selectPrompt');
+const goodbye = t('messages.goodbye');
+```
+
+### Command Handling
+
+```javascript
+import { registerCommand, handleCommand } from 'cli-menu-kit';
+
+// Register custom command
+registerCommand('test', () => {
+  console.log('Test command executed!');
+  return false; // Continue (don't exit)
+}, 'Run test command');
+
+// Handle command input
+const result = handleCommand('/test');
+// Built-in commands: /quit, /help, /clear, /back
+```
+
+## API Reference
+
+### Menu API
+
+#### menu.radio(config)
+Single-select vertical menu.
+
+```typescript
+interface RadioMenuConfig {
+  title?: string;
+  options: MenuOption[];
+  prompt?: string;
+  hints?: string[];
+  layout?: MenuLayout;
+  defaultIndex?: number;
+  allowNumberKeys?: boolean;
+  allowLetterKeys?: boolean;
+  onExit?: () => void;
+}
+
+// Returns: { index: number, value: string }
+```
+
+#### menu.checkbox(config)
+Multi-select vertical menu.
+
+```typescript
+interface CheckboxMenuConfig {
+  title?: string;
+  options: MenuOption[];
+  prompt?: string;
+  hints?: string[];
+  layout?: MenuLayout;
+  defaultSelected?: number[];
+  minSelections?: number;
+  maxSelections?: number;
+  allowSelectAll?: boolean;
+  allowInvert?: boolean;
+  onExit?: () => void;
+}
+
+// Returns: { indices: number[], values: string[] }
+```
+
+#### menu.boolean(config)
+Yes/No selection menu.
+
+```typescript
+interface BooleanMenuConfig {
+  question: string;
+  defaultValue?: boolean;
+  yesText?: string;
+  noText?: string;
+  orientation?: 'horizontal' | 'vertical';
+  onExit?: () => void;
+}
+
+// Returns: boolean
+```
+
+### Input API
+
+#### input.text(config)
+Text input with validation.
+
+```typescript
+interface TextInputConfig {
+  prompt: string;
+  defaultValue?: string;
+  placeholder?: string;
+  maxLength?: number;
+  minLength?: number;
+  allowEmpty?: boolean;
+  validate?: (value: string) => boolean | string;
+  errorMessage?: string;
+  onExit?: () => void;
+}
+
+// Returns: string
+```
+
+#### input.number(config)
+Number input with constraints.
+
+```typescript
+interface NumberInputConfig {
+  prompt: string;
+  defaultValue?: number;
+  min?: number;
+  max?: number;
+  allowDecimals?: boolean;
+  allowNegative?: boolean;
+  validate?: (value: string) => boolean | string;
+  errorMessage?: string;
+  onExit?: () => void;
+}
+
+// Returns: number
+```
+
+#### input.language(config)
+Language selector.
+
+```typescript
+interface LanguageSelectorConfig {
+  languages: Array<{
+    code: string;
+    name: string;
+    nativeName?: string;
+  }>;
+  defaultLanguage?: string;
+  prompt?: string;
+  onExit?: () => void;
+}
+
+// Returns: string (language code)
+```
+
+### Wizard API
+
+#### wizard.run(config)
+Run a multi-step wizard.
+
+```typescript
+interface WizardConfig {
+  title?: string;
+  steps: WizardStep[];
+  showProgress?: boolean;
+  onComplete?: (results: Record<string, any>) => void;
+  onCancel?: () => void;
+}
+
+interface WizardStep {
+  name: string;
+  title: string;
+  component: 'radio-menu' | 'checkbox-menu' | 'boolean-menu' |
+            'text-input' | 'number-input' | 'language-selector';
+  config: any;
+  required?: boolean;
+  validate?: (value: any) => boolean | string;
+  skip?: (results: Record<string, any>) => boolean;
+}
+
+// Returns: { completed: boolean, results: Record<string, any> }
+```
+
+## Architecture
+
+The library is organized into a modular architecture:
+
+```
+src/
+├── types/              # Type definitions
+│   ├── layout.types.ts
+│   ├── menu.types.ts
+│   ├── input.types.ts
+│   └── display.types.ts
+├── core/               # Core utilities
+│   ├── terminal.ts
+│   ├── keyboard.ts
+│   ├── renderer.ts
+│   └── colors.ts
+├── components/         # UI components
+│   ├── menus/
+│   ├── inputs/
+│   └── display/
+├── features/           # Advanced features
+│   ├── wizard.ts
+│   └── commands.ts
+├── i18n/              # Internationalization
+│   ├── types.ts
+│   ├── registry.ts
+│   └── languages/
+├── api.ts             # Unified API
+└── index.ts           # Main entry point
+```
+
+See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed documentation.
+
+## Development
+
+```bash
+# Install dependencies
+npm install
+
+# Build TypeScript
+npm run build
+
+# Run tests
+node test/phase2-test.js  # Menu components
+node test/phase3-test.js  # Input components
+node test/phase4-test.js  # Display components
+node test/phase5-test.js  # Advanced features
+```
+
+## Design Principles
+
+1. **Component-Based**: Each UI element is a separate, reusable component
+2. **Layout System**: Components can be composed in different orders
+3. **Type Safety**: Full TypeScript support with strict typing
+4. **Zero Dependencies**: Pure Node.js implementation
+5. **i18n Support**: Multi-language support with mapping system
+6. **Maintainability**: All files kept under 300 lines
+
+## License
+
+MIT
+
+## Contributing
+
+Contributions are welcome! Please ensure:
+- Files stay under 300 lines
+- TypeScript types are properly defined
+- Code follows existing patterns
+- Tests are included for new features
+- All comments in English
 
 ## Installation
 
