@@ -28,10 +28,16 @@ export async function selectMenu(
     type = 'main',
     title,
     prompt,
+    showPrompt = (type === 'main'), // Default: show for main menu, hide for sub
     showHints = true
   } = config;
 
-  // Default prompts based on type
+  // Input prompt text (with cursor indicator)
+  const inputPromptText = lang === 'zh'
+    ? '请输入选项，回车确认（不区分大小写）: '
+    : 'Enter option, press Enter to confirm (case insensitive): ';
+
+  // Default prompts based on type (deprecated, kept for backward compatibility)
   const defaultPrompt = type === 'main'
     ? (lang === 'zh' ? '请选择一个选项' : 'Please select an option')
     : undefined;
@@ -82,8 +88,8 @@ export async function selectMenu(
       // - title lines (if provided)
       // - 1 blank line after title
       // - N option lines
-      // - 1 blank line before prompt
-      // - 1 prompt line (if provided)
+      // - 1 blank line before input prompt (if shown)
+      // - 1 input prompt line (if shown)
       // - 1 blank line before hints (if hints shown)
       // - M hint lines (if hints shown)
 
@@ -95,7 +101,7 @@ export async function selectMenu(
       let totalLines = 0;
       if (title) totalLines += titleLines + 1; // title + blank line
       totalLines += options.length; // options
-      if (finalPrompt) totalLines += 2; // blank line + prompt
+      if (showPrompt) totalLines += 2; // blank line + input prompt
       if (showHints && hintText) totalLines += 1 + hintLines; // blank line + hints
 
       if (!isFirstRender) {
@@ -163,14 +169,17 @@ export async function selectMenu(
         }
       });
 
-      // Render prompt if provided
-      if (finalPrompt) {
-        // Blank line before prompt
+      // Render input prompt if enabled
+      if (showPrompt) {
+        // Blank line before input prompt
         process.stdout.write('\x1b[2K');
         console.log();
-        // Prompt line
+        // Input prompt line with cursor
         process.stdout.write('\x1b[2K\r');
-        console.log(`  ${theme.muted}${finalPrompt}${colors.reset}`);
+        process.stdout.write(`  ${theme.muted}${inputPromptText}${colors.reset}`);
+        // Show cursor indicator
+        process.stdout.write(`${theme.active}_${colors.reset}`);
+        console.log();
       }
 
       // Render hints if enabled

@@ -20,8 +20,8 @@ async function test() {
     lang: 'zh',
     type: 'main',
     title: '=== CLI Menu Kit 测试 ===',
-    prompt: '请选择一个选项',
-    showHints: true
+    showPrompt: true,  // Show input prompt with cursor
+    showHints: true    // Show operation hints
   });
 
   console.log();

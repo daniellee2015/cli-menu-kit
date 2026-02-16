@@ -16,6 +16,7 @@ export interface MenuConfig {
   type?: MenuType;
   title?: string;           // Menu header title
   prompt?: string;          // Prompt message between options and hints
+  showPrompt?: boolean;     // Whether to show input prompt (default: true for main, false for sub)
   showHints?: boolean;      // Whether to show operation hints (default: true)
 }
 
