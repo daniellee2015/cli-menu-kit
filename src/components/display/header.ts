@@ -85,8 +85,8 @@ export function renderHeader(config: HeaderConfig): void {
 
   // Version and URL (outside the box, with colors)
   if (version || url) {
-    const versionText = version ? `${uiColors.info}Version: ${version}${colors.reset}` : '';
-    const urlText = url ? `${uiColors.accent}${url}${colors.reset}` : '';
+    const versionText = version ? `${uiColors.textSecondary}Version: ${colors.reset}${uiColors.primary}${version}${colors.reset}` : '';
+    const urlText = url ? `${uiColors.primary}${url}${colors.reset}` : '';
     const separator = version && url ? `${uiColors.textSecondary}  |  ${colors.reset}` : '';
     writeLine(`  ${versionText}${separator}${urlText}`);
   }

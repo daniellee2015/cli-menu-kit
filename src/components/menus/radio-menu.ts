@@ -45,6 +45,7 @@ export async function showRadioMenu(config: RadioMenuConfig): Promise<RadioMenuR
     defaultIndex = 0,
     allowNumberKeys = true,
     allowLetterKeys = false,
+    separatorWidth = 30,
     onExit
   } = config;
 
@@ -132,8 +133,8 @@ export async function showRadioMenu(config: RadioMenuConfig): Promise<RadioMenuR
         case 'options':
           optionData.forEach((item, index) => {
             if (item.isSeparator) {
-              // Render section label
-              renderSectionLabel(item.label);
+              // Render section label with configured width
+              renderSectionLabel(item.label, separatorWidth);
             } else {
               // Check if option starts with a number or letter prefix
               const numberMatch = item.value.match(/^(\d+)\.\s*/);

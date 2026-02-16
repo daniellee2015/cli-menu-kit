@@ -47,6 +47,7 @@ export async function showCheckboxMenu(config: CheckboxMenuConfig): Promise<Chec
     maxSelections,
     allowSelectAll = true,
     allowInvert = true,
+    separatorWidth = 30,
     onExit
   } = config;
 
@@ -138,7 +139,7 @@ export async function showCheckboxMenu(config: CheckboxMenuConfig): Promise<Chec
           optionData.forEach((item, index) => {
             if (item.isSeparator) {
               // Render section label
-              renderSectionLabel(item.label);
+              renderSectionLabel(item.label, separatorWidth);
             } else {
               renderOption(item.value, selected.has(index), index === cursorIndex);
             }

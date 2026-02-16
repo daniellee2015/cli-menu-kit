@@ -144,10 +144,11 @@ export function renderSeparator(char: string = '─', width?: number): void {
 /**
  * Render a section label (menu grouping)
  * @param label - Label text (optional)
+ * @param width - Total width of the separator (default: 30)
  */
-export function renderSectionLabel(label?: string): void {
+export function renderSectionLabel(label?: string, width: number = 30): void {
   if (label) {
-    const totalWidth = 30; // Fixed total width for consistency
+    const totalWidth = width; // Use configured width
     const padding = 2; // Spaces around label
     const labelWithPadding = ` ${label} `;
     const labelLength = labelWithPadding.length;

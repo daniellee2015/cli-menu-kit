@@ -33,6 +33,9 @@ export interface BaseMenuConfig {
 
   /** Goodbye message function */
   onExit?: () => void;
+
+  /** Separator width for section labels (default: 30) */
+  separatorWidth?: number;
 }
 
 /**
