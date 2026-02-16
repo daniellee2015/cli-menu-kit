@@ -11,6 +11,26 @@ import { renderOption, renderInputPrompt, renderHints, renderBlankLines, renderS
 import { colors } from '../../core/colors.js';
 
 /**
+ * Generate hints based on menu configuration
+ */
+function generateHints(allowSelectAll: boolean, allowInvert: boolean): string[] {
+  const hints: string[] = ['↑↓ 方向键', '空格 选中/取消'];
+
+  if (allowSelectAll) {
+    hints.push('A 全选');
+  }
+
+  if (allowInvert) {
+    hints.push('I 反选');
+  }
+
+  hints.push('⏎ 确认');
+  hints.push(`${colors.red}Ctrl+C 退出${colors.reset}`);
+
+  return hints;
+}
+
+/**
  * Show a checkbox menu (multi-select)
  * @param config - Menu configuration
  * @returns Promise resolving to selected options
@@ -20,7 +40,7 @@ export async function showCheckboxMenu(config: CheckboxMenuConfig): Promise<Chec
     options,
     title,
     prompt = '空格选中/取消,回车确认',
-    hints = ['↑↓ 方向键', '空格 选中/取消', 'A 全选', 'I 反选', '⏎ 确认'],
+    hints,
     layout = { ...LAYOUT_PRESETS.SUB_MENU, order: ['input', 'options', 'hints'] },
     defaultSelected = [],
     minSelections = 0,
@@ -29,6 +49,9 @@ export async function showCheckboxMenu(config: CheckboxMenuConfig): Promise<Chec
     allowInvert = true,
     onExit
   } = config;
+
+  // Generate hints dynamically if not provided
+  const displayHints = hints || generateHints(allowSelectAll, allowInvert);
 
   // Validate options
   if (!options || options.length === 0) {
@@ -121,8 +144,8 @@ export async function showCheckboxMenu(config: CheckboxMenuConfig): Promise<Chec
           break;
 
         case 'hints':
-          if (layout.visible.hints && hints.length > 0) {
-            renderHints(hints);
+          if (layout.visible.hints && displayHints.length > 0) {
+            renderHints(displayHints);
             lineCount++;
           }
           break;

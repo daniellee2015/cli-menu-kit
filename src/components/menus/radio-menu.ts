@@ -11,6 +11,26 @@ import { renderHeader, renderOption, renderInputPrompt, renderHints, renderBlank
 import { colors } from '../../core/colors.js';
 
 /**
+ * Generate hints based on menu configuration
+ */
+function generateHints(allowNumberKeys: boolean, allowLetterKeys: boolean): string[] {
+  const hints: string[] = ['↑↓ 方向键'];
+
+  if (allowNumberKeys) {
+    hints.push('0-9 输入序号');
+  }
+
+  if (allowLetterKeys) {
+    hints.push('字母 快捷键');
+  }
+
+  hints.push('⏎ 确认');
+  hints.push(`${colors.red}Ctrl+C 退出${colors.reset}`);
+
+  return hints;
+}
+
+/**
  * Show a radio menu (single-select)
  * @param config - Menu configuration
  * @returns Promise resolving to selected option
@@ -20,13 +40,16 @@ export async function showRadioMenu(config: RadioMenuConfig): Promise<RadioMenuR
     options,
     title,
     prompt = '输入选项或用↑↓选择,回车确认',
-    hints = ['↑↓ 方向键', '0-9 输入序号', '⏎ 确认'],
+    hints,
     layout = LAYOUT_PRESETS.MAIN_MENU,
     defaultIndex = 0,
     allowNumberKeys = true,
     allowLetterKeys = false,
     onExit
   } = config;
+
+  // Generate hints dynamically if not provided
+  const displayHints = hints || generateHints(allowNumberKeys, allowLetterKeys);
 
   // Validate options
   if (!options || options.length === 0) {
@@ -140,8 +163,8 @@ export async function showRadioMenu(config: RadioMenuConfig): Promise<RadioMenuR
           break;
 
         case 'hints':
-          if (layout.visible.hints && hints.length > 0) {
-            renderHints(hints);
+          if (layout.visible.hints && displayHints.length > 0) {
+            renderHints(displayHints);
             lineCount++;
           }
           break;
