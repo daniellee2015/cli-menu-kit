@@ -42,6 +42,89 @@ A comprehensive, modular CLI menu system for Node.js with full TypeScript suppor
 npm install cli-menu-kit
 ```
 
+## Configuration
+
+CLI Menu Kit is highly customizable with sensible defaults. Configure colors, language, and UI elements to match your application's style.
+
+### 🎨 Color Customization
+
+Customize all UI colors globally:
+
+```javascript
+import { setUIColors, colors } from 'cli-menu-kit';
+
+// Override specific colors (all optional)
+setUIColors({
+  primary: colors.blue,        // Main interactive elements, highlights
+  textSecondary: colors.dim,   // Descriptions, hints
+  error: colors.red,           // Errors, exit options
+  border: colors.magenta,      // Borders, frames
+  separator: colors.dim,       // Section separators
+  // ... see full list in documentation
+});
+
+// Reset to defaults
+import { resetUIColors } from 'cli-menu-kit';
+resetUIColors();
+```
+
+### 🌍 Language Support
+
+Switch between English and Chinese (or add custom languages):
+
+```javascript
+import { setLanguage } from 'cli-menu-kit';
+
+setLanguage('en');  // English (default: 'zh')
+```
+
+### 🎯 Header Styles
+
+Three header modes for different contexts:
+
+```javascript
+import { renderHeader, renderSectionHeader, renderSimpleHeader } from 'cli-menu-kit';
+
+// Full header (main menu, initialization)
+renderHeader({
+  asciiArt: ['...'],           // Optional
+  title: 'Product Name',       // Optional
+  description: '...',          // Optional
+  version: '1.0.0',            // Optional - omit to hide
+  url: 'https://...',          // Optional - omit to hide
+  menuTitle: 'Select option:'  // Optional - omit to hide
+});
+
+// Section header (sub-menus)
+renderSectionHeader('Section Title', 50);  // Width configurable
+
+// Simple header (quick prompts)
+renderSimpleHeader('Simple Title');
+```
+
+### ⚙️ Menu Options
+
+All menu options are configurable:
+
+```javascript
+menu.radio({
+  options: [
+    // Optional grouping with separators
+    { type: 'separator', label: 'Setup' },
+    '1. Option 1',
+    '2. Option 2',
+    { type: 'separator', label: 'Advanced' },
+    '3. Option 3'
+  ],
+
+  title: 'Menu Title',         // Optional
+  hints: ['↑↓ Navigate'],      // Optional - omit or pass [] to hide
+  separatorWidth: 40,          // Optional - default: 30
+  allowNumberKeys: true,       // Optional - default: true
+  allowLetterKeys: false       // Optional - default: false
+});
+```
+
 ## Quick Start
 
 ### Unified API (Recommended)

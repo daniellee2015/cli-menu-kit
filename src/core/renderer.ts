@@ -68,12 +68,12 @@ export function renderOption(
   const description = parts.length > 1 ? parts.slice(1).join(' - ') : '';
 
   if (isHighlighted) {
-    line += `${uiColors.primary}${mainText}${colors.reset}`;
+    line += `${uiColors.primary}${colors.bold}${mainText}${colors.reset}`;
     if (description) {
       line += ` ${uiColors.textSecondary}- ${description}${colors.reset}`;
     }
   } else {
-    line += mainText;
+    line += `${colors.bold}${mainText}${colors.reset}`;
     if (description) {
       line += ` ${uiColors.textSecondary}- ${description}${colors.reset}`;
     }
