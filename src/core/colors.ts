@@ -54,7 +54,7 @@ export const colors = {
  * Semantic color hierarchy for UI elements
  * Defines consistent colors for different levels of information
  */
-export const uiColors = {
+export const defaultUIColors = {
   // Primary elements
   primary: colors.cyan,           // Main interactive elements, highlights
   accent: colors.blue,            // Secondary highlights, links
@@ -80,6 +80,45 @@ export const uiColors = {
   separator: colors.dim,          // Separators, dividers
   prefix: colors.dim              // Number/letter prefixes
 } as const;
+
+/**
+ * Current UI colors (can be customized)
+ */
+let currentUIColors = { ...defaultUIColors };
+
+/**
+ * Get current UI colors
+ */
+export function getUIColors() {
+  return currentUIColors;
+}
+
+/**
+ * Set custom UI colors (partial override)
+ * @param customColors - Partial UI colors to override defaults
+ */
+export function setUIColors(customColors: Partial<typeof defaultUIColors>): void {
+  currentUIColors = {
+    ...currentUIColors,
+    ...customColors
+  };
+}
+
+/**
+ * Reset UI colors to defaults
+ */
+export function resetUIColors(): void {
+  currentUIColors = { ...defaultUIColors };
+}
+
+/**
+ * UI colors accessor (always returns current colors)
+ */
+export const uiColors = new Proxy({} as typeof defaultUIColors, {
+  get(_target, prop: string) {
+    return currentUIColors[prop as keyof typeof defaultUIColors];
+  }
+});
 
 /**
  * RGB color representation

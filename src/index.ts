@@ -80,6 +80,19 @@ export {
   getCurrentLanguageMap
 } from './i18n/registry.js';
 
+// Export color configuration
+export {
+  colors,
+  uiColors,
+  defaultUIColors,
+  getUIColors,
+  setUIColors,
+  resetUIColors,
+  createGradient,
+  applyGradient,
+  colorize
+} from './core/colors.js';
+
 // Export types
 export type {
   MenuLayout,
@@ -128,7 +141,6 @@ export type {
 } from './i18n/types.js';
 
 // Export core utilities (for advanced users)
-export { colors, createGradient, applyGradient, colorize } from './core/colors.js';
 export { KEY_CODES } from './core/keyboard.js';
 export { LAYOUT_PRESETS } from './types/layout.types.js';
 
