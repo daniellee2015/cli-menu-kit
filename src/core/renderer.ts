@@ -82,7 +82,7 @@ export function renderInputPrompt(
   value: string,
   showCursor: boolean = false
 ): void {
-  let line = `  ${colors.dim}${prompt}${colors.reset} `;
+  let line = `  ${prompt} `;
 
   if (value) {
     line += `${colors.cyan}${value}${colors.reset}`;
