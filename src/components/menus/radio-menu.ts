@@ -70,7 +70,8 @@ export async function showRadioMenu(config: RadioMenuConfig): Promise<RadioMenuR
             const match = option.match(/^(\d+)\.\s*/);
             const prefix = match ? '' : `${index + 1}. `;
 
-            renderOption(option, false, index === selectedIndex, prefix);
+            // For radio menus, don't show selection indicator (pass undefined instead of false)
+            renderOption(option, undefined as any, index === selectedIndex, prefix);
             lineCount++;
           });
           break;
