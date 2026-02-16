@@ -123,7 +123,17 @@ export function renderSeparator(char: string = '─', width?: number): void {
  */
 export function renderSectionLabel(label?: string): void {
   if (label) {
-    writeLine(`  ${colors.dim}────── ${label} ──────${colors.reset}`);
+    const totalWidth = 50; // Fixed total width for consistency
+    const padding = 2; // Spaces around label
+    const labelWithPadding = ` ${label} `;
+    const labelLength = labelWithPadding.length;
+    const dashesTotal = totalWidth - labelLength;
+    const dashesLeft = Math.floor(dashesTotal / 2);
+    const dashesRight = dashesTotal - dashesLeft;
+
+    const line = `  ${colors.dim}${'─'.repeat(dashesLeft)}${labelWithPadding}${'─'.repeat(dashesRight)}${colors.reset}`;
+    writeLine(line);
+    writeLine(''); // Blank line after separator
   } else {
     writeLine('');
   }
