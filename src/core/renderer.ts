@@ -136,7 +136,7 @@ export function renderSeparator(char: string = '─', width?: number): void {
  */
 export function renderSectionLabel(label?: string): void {
   if (label) {
-    const totalWidth = 50; // Fixed total width for consistency
+    const totalWidth = 30; // Fixed total width for consistency
     const padding = 2; // Spaces around label
     const labelWithPadding = ` ${label} `;
     const labelLength = labelWithPadding.length;
