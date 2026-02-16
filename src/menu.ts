@@ -71,12 +71,11 @@ export async function selectMenu(
       const totalLines = 1 + 1 + options.length + 1 + hintLines;
 
       if (!isFirstRender) {
+        // Move cursor to start position
         process.stdout.write(`\x1b[${renderedLines}A`);
-        process.stdout.write('\x1b[J');
       }
-      isFirstRender = false;
 
-      // Render input line
+      // Clear and render input line
       process.stdout.write('\x1b[2K\r');
       process.stdout.write(`${theme.muted}${inputPrompt}${colors.reset}`);
 
@@ -103,10 +102,14 @@ export async function selectMenu(
       }
       process.stdout.write(`${theme.active}${displayValue}${colors.reset}`);
       console.log();
+
+      // Clear blank line
+      process.stdout.write('\x1b[2K');
       console.log();
 
-      // Render menu options
+      // Render menu options (clear each line before rendering)
       options.forEach((option, index) => {
+        process.stdout.write('\x1b[2K\r'); // Clear line
         const isSelected = index === selectedIndex;
         const prefix = isSelected ? `${theme.active}❯ ` : '  ';
         const numColor = isSelected ? theme.active : theme.primary;
@@ -152,12 +155,21 @@ export async function selectMenu(
         }
       });
 
+      // Clear blank line before hint
+      process.stdout.write('\x1b[2K');
       console.log();
+
+      // Clear and render hint lines
       const indent = '  ';
       const indentedHint = hintText.split('\n').map(line => indent + line).join('\n');
-      console.log(indentedHint);
+      const hintLinesArray = indentedHint.split('\n');
+      hintLinesArray.forEach(line => {
+        process.stdout.write('\x1b[2K\r');
+        console.log(line);
+      });
 
       renderedLines = totalLines;
+      isFirstRender = false;
     };
 
     const onKeyPress = (key: string) => {
