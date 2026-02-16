@@ -85,7 +85,13 @@ export async function selectMenu(
       if (options[selectedIndex]) {
         const option = options[selectedIndex];
         if (typeof option === 'string') {
-          displayValue = String(selectedIndex + 1);
+          // Check if option has number prefix
+          const numMatch = option.match(/^(\d+)\./);
+          if (numMatch) {
+            displayValue = numMatch[1];
+          } else {
+            displayValue = String(selectedIndex + 1);
+          }
         } else if (option.label) {
           const match = option.label.match(/^([^.]+)\./);
           if (match) {
@@ -107,13 +113,31 @@ export async function selectMenu(
         const titleColor = isSelected ? theme.active : theme.title;
 
         if (typeof option === 'string') {
-          const match = option.match(/^([^-]+)(\s*-\s*.+)?$/);
-          if (match && match[2]) {
-            const title = match[1];
-            const desc = match[2];
-            console.log(`${prefix}${numColor}${index + 1}.${colors.reset} ${titleColor}${title}${theme.muted}${desc}${colors.reset}`);
+          // Check if option already has number prefix (e.g., "1. Title")
+          const numMatch = option.match(/^(\d+\.\s*)(.+)$/);
+          if (numMatch) {
+            // Option already has number, use it
+            const num = numMatch[1];
+            const rest = numMatch[2];
+            // Check for description separator
+            const descMatch = rest.match(/^([^-]+)(\s*-\s*.+)?$/);
+            if (descMatch && descMatch[2]) {
+              const title = descMatch[1];
+              const desc = descMatch[2];
+              console.log(`${prefix}${numColor}${num}${titleColor}${title}${theme.muted}${desc}${colors.reset}`);
+            } else {
+              console.log(`${prefix}${numColor}${num}${titleColor}${rest}${colors.reset}`);
+            }
           } else {
-            console.log(`${prefix}${numColor}${index + 1}.${colors.reset} ${titleColor}${option}${colors.reset}`);
+            // No number prefix, add index-based number
+            const match = option.match(/^([^-]+)(\s*-\s*.+)?$/);
+            if (match && match[2]) {
+              const title = match[1];
+              const desc = match[2];
+              console.log(`${prefix}${numColor}${index + 1}.${colors.reset} ${titleColor}${title}${theme.muted}${desc}${colors.reset}`);
+            } else {
+              console.log(`${prefix}${numColor}${index + 1}.${colors.reset} ${titleColor}${option}${colors.reset}`);
+            }
           }
         } else if (option.label) {
           const match = option.label.match(/^([^.]+\.\s*)([^-]+)(\s*-\s*.+)?$/);
