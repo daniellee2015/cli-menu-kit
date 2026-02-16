@@ -1,386 +1,90 @@
 /**
- * CLI Menu Kit - Menu Components
- * Interactive menu selection with arrow keys and keyboard shortcuts
+ * CLI Menu Kit - Unified Menu Wrapper
+ * Convenient API for all menu types
  */
 
-import { MenuConfig, MultiSelectConfig, MenuOption } from './types';
-import { colors, theme, symbols, buildHint, showGoodbye } from './components';
+import { selectMenu } from './menu-single';
+import { selectMultiMenu } from './menu-multi';
+import { askYesNo, askInput, askNumber } from './input';
+import { MenuConfig, MenuOption, MultiSelectConfig } from './types';
 
 /**
- * Interactive menu selection with BOTH arrow keys AND number input
- *
- * Features:
- * - Arrow keys (↑/↓) to navigate with live highlight
- * - Number/letter keys to directly jump and select
- * - Enter key (⏎) to confirm selection
- * - Input indicator at top shows current input
- *
- * @param options - Menu options (strings or objects with label/value)
- * @param config - Configuration object
- * @returns Selected index (0-based)
+ * Unified menu interface
+ * Provides convenient access to all menu types
  */
-export async function selectMenu(
-  options: Array<string | MenuOption>,
-  config: MenuConfig = {}
-): Promise<number> {
-  const {
-    lang = 'zh',
-    type = 'main',
-    title,
-    prompt,
-    showPrompt = (type === 'main'), // Default: show for main menu, hide for sub
-    showHints = true
-  } = config;
+export const menu = {
+  /**
+   * Single-select menu (vertical)
+   * @param options - Menu options
+   * @param config - Configuration
+   * @returns Selected index
+   */
+  select: selectMenu,
 
-  // Input prompt text (with cursor indicator)
-  const inputPromptText = lang === 'zh'
-    ? '请输入选项，回车确认（不区分大小写）: '
-    : 'Enter option, press Enter to confirm (case insensitive): ';
+  /**
+   * Multi-select menu (vertical with checkboxes)
+   * @param options - Menu options
+   * @param config - Configuration
+   * @returns Array of selected indices
+   */
+  multiSelect: selectMultiMenu,
 
-  // Default prompts based on type (deprecated, kept for backward compatibility)
-  const defaultPrompt = type === 'main'
-    ? (lang === 'zh' ? '请选择一个选项' : 'Please select an option')
-    : undefined;
+  /**
+   * Yes/No confirmation (horizontal single-select)
+   * @param prompt - Question to ask
+   * @param options - Configuration
+   * @returns true for Yes, false for No
+   */
+  confirm: askYesNo,
 
-  const finalPrompt = prompt !== undefined ? prompt : defaultPrompt;
+  /**
+   * Text input
+   * @param prompt - Input prompt
+   * @param options - Configuration with validation
+   * @returns User input string
+   */
+  input: askInput,
 
-  // Choose hint keys based on menu type
-  let hintKeys: Array<'arrows' | 'number' | 'letter' | 'enter' | 'esc'>;
-  if (type === 'main') {
-    hintKeys = ['arrows', 'number', 'letter', 'enter'];
-  } else if (type === 'firstRun') {
-    hintKeys = ['arrows', 'number', 'enter', 'esc'];
-  } else {
-    hintKeys = ['arrows', 'number', 'enter'];
+  /**
+   * Number input
+   * @param prompt - Input prompt
+   * @param options - Configuration with min/max
+   * @returns User input number
+   */
+  number: askNumber
+};
+
+/**
+ * Create a parent-child menu relationship
+ * Parent is single-select, child is multi-select
+ *
+ * @param parentOptions - Parent menu options
+ * @param getChildOptions - Function to get child options based on parent selection
+ * @param config - Configuration
+ * @returns Object with parentIndex and childIndices
+ */
+export async function selectWithChildren(
+  parentOptions: Array<string | MenuOption>,
+  getChildOptions: (parentIndex: number) => string[],
+  config: {
+    parentConfig?: MenuConfig;
+    childConfig?: MultiSelectConfig;
+  } = {}
+): Promise<{ parentIndex: number; childIndices: number[] }> {
+  // Show parent menu
+  const parentIndex = await selectMenu(parentOptions, config.parentConfig);
+
+  // Get child options based on parent selection
+  const childOptions = getChildOptions(parentIndex);
+
+  // Show child menu if there are options
+  let childIndices: number[] = [];
+  if (childOptions.length > 0) {
+    childIndices = await selectMultiMenu(childOptions, config.childConfig);
   }
 
-  const hintText = showHints ? buildHint(hintKeys, lang) : '';
-  const hintLines = hintText ? (hintText.match(/\n/g) || []).length + 1 : 0;
-
-  return new Promise((resolve) => {
-    let selectedIndex = 0;
-    let isFirstRender = true;
-    let renderedLines = 0;
-
-    const stdin = process.stdin;
-    stdin.setRawMode(true);
-    stdin.resume();
-    stdin.setEncoding('utf8');
-
-    // Hide cursor
-    process.stdout.write('\x1b[?25l');
-
-    const cleanup = (finalIndex: number) => {
-      stdin.setRawMode(false);
-      stdin.removeListener('data', onKeyPress);
-
-      if (renderedLines > 0) {
-        process.stdout.write(`\x1b[${renderedLines}A`);
-        process.stdout.write('\x1b[J');
-      }
-
-      process.stdout.write('\x1b[?25h');
-      resolve(finalIndex);
-    };
-
-    const render = () => {
-      // Calculate total lines:
-      // - title lines (if provided)
-      // - 1 blank line after title
-      // - N option lines
-      // - 1 blank line before input prompt (if shown)
-      // - 1 input prompt line (if shown)
-      // - 1 blank line before hints (if hints shown)
-      // - M hint lines (if hints shown)
-
-      let titleLines = 0;
-      if (title) {
-        titleLines = (title.match(/\n/g) || []).length + 1;
-      }
-
-      let totalLines = 0;
-      if (title) totalLines += titleLines + 1; // title + blank line
-      totalLines += options.length; // options
-      if (showPrompt) totalLines += 2; // blank line + input prompt
-      if (showHints && hintText) totalLines += 1 + hintLines; // blank line + hints
-
-      if (!isFirstRender) {
-        // Move cursor to start position
-        process.stdout.write(`\x1b[${renderedLines}A`);
-      }
-
-      // Render title if provided
-      if (title) {
-        const titleLinesArray = title.split('\n');
-        titleLinesArray.forEach(line => {
-          process.stdout.write('\x1b[2K\r');
-          console.log(`  ${theme.primary}${line}${colors.reset}`);
-        });
-        // Blank line after title
-        process.stdout.write('\x1b[2K');
-        console.log();
-      }
-
-      // Render menu options (clear each line before rendering)
-      options.forEach((option, index) => {
-        process.stdout.write('\x1b[2K\r'); // Clear line
-        const isSelected = index === selectedIndex;
-        const prefix = isSelected ? `${theme.active}❯ ` : '  ';
-        const numColor = isSelected ? theme.active : theme.primary;
-        const titleColor = isSelected ? theme.active : theme.title;
-
-        if (typeof option === 'string') {
-          // Check if option already has number prefix (e.g., "1. Title")
-          const numMatch = option.match(/^(\d+\.\s*)(.+)$/);
-          if (numMatch) {
-            // Option already has number, use it
-            const num = numMatch[1];
-            const rest = numMatch[2];
-            // Check for description separator
-            const descMatch = rest.match(/^([^-]+)(\s*-\s*.+)?$/);
-            if (descMatch && descMatch[2]) {
-              const title = descMatch[1];
-              const desc = descMatch[2];
-              console.log(`${prefix}${numColor}${num}${titleColor}${title}${theme.muted}${desc}${colors.reset}`);
-            } else {
-              console.log(`${prefix}${numColor}${num}${titleColor}${rest}${colors.reset}`);
-            }
-          } else {
-            // No number prefix, add index-based number
-            const match = option.match(/^([^-]+)(\s*-\s*.+)?$/);
-            if (match && match[2]) {
-              const title = match[1];
-              const desc = match[2];
-              console.log(`${prefix}${numColor}${index + 1}.${colors.reset} ${titleColor}${title}${theme.muted}${desc}${colors.reset}`);
-            } else {
-              console.log(`${prefix}${numColor}${index + 1}.${colors.reset} ${titleColor}${option}${colors.reset}`);
-            }
-          }
-        } else if (option.label) {
-          const match = option.label.match(/^([^.]+\.\s*)([^-]+)(\s*-\s*.+)?$/);
-          if (match) {
-            const num = match[1];
-            const title = match[2];
-            const desc = match[3] || '';
-            console.log(`${prefix}${numColor}${num}${titleColor}${title}${theme.muted}${desc}${colors.reset}`);
-          } else {
-            console.log(`${prefix}${numColor}${index + 1}.${colors.reset} ${titleColor}${option.label}${colors.reset}`);
-          }
-        }
-      });
-
-      // Render input prompt if enabled
-      if (showPrompt) {
-        // Blank line before input prompt
-        process.stdout.write('\x1b[2K');
-        console.log();
-        // Input prompt line with cursor
-        process.stdout.write('\x1b[2K\r');
-        process.stdout.write(`  ${theme.muted}${inputPromptText}${colors.reset}`);
-        // Show cursor indicator
-        process.stdout.write(`${theme.active}_${colors.reset}`);
-        console.log();
-      }
-
-      // Render hints if enabled
-      if (showHints && hintText) {
-        // Blank line before hints
-        process.stdout.write('\x1b[2K');
-        console.log();
-        // Hint lines
-        const indent = '  ';
-        const indentedHint = hintText.split('\n').map(line => indent + line).join('\n');
-        const hintLinesArray = indentedHint.split('\n');
-        hintLinesArray.forEach(line => {
-          process.stdout.write('\x1b[2K\r');
-          console.log(line);
-        });
-      }
-
-      renderedLines = totalLines;
-      isFirstRender = false;
-    };
-
-    const onKeyPress = (key: string) => {
-      if (key === '\u001b[A') { // Up arrow
-        selectedIndex = selectedIndex > 0 ? selectedIndex - 1 : options.length - 1;
-        render();
-      } else if (key === '\u001b[B') { // Down arrow
-        selectedIndex = selectedIndex < options.length - 1 ? selectedIndex + 1 : 0;
-        render();
-      } else if (key === '\r') { // Enter
-        cleanup(selectedIndex);
-      } else if (key === '\u001b' || key === '\u001b[') { // Esc
-        if (type === 'firstRun') {
-          stdin.setRawMode(false);
-          stdin.removeListener('data', onKeyPress);
-          process.stdout.write('\x1b[?25h');
-          showGoodbye(lang);
-          process.exit(0);
-        }
-      } else if (key === '\u0003') { // Ctrl+C
-        stdin.setRawMode(false);
-        stdin.removeListener('data', onKeyPress);
-        process.stdout.write('\x1b[?25h');
-        showGoodbye(lang);
-        process.exit(0);
-      } else if (key.match(/^[0-9]$/)) { // Number key
-        const num = parseInt(key);
-        if (num >= 1 && num <= options.length) {
-          selectedIndex = num - 1;
-          render();
-        }
-      } else if (key.match(/^[a-zA-Z]$/)) { // Letter key
-        const letter = key.toUpperCase();
-        options.forEach((option, index) => {
-          if (typeof option !== 'string' && option.label) {
-            const match = option.label.match(/^([A-Z])\./);
-            if (match && match[1] === letter) {
-              selectedIndex = index;
-            }
-          }
-        });
-        render();
-      }
-    };
-
-    stdin.on('data', onKeyPress);
-    render();
-  });
+  return { parentIndex, childIndices };
 }
 
-/**
- * Interactive multi-select menu with checkboxes
- *
- * Features:
- * - Arrow keys (↑/↓) to navigate
- * - Space to toggle selection
- * - A to select all
- * - I to invert selection
- * - Enter to confirm
- * - Shows ◉ for selected items, ○ for unselected items
- *
- * @param options - Menu options
- * @param config - Configuration object
- * @returns Array of selected indices
- */
-export async function selectMultiMenu(
-  options: string[],
-  config: MultiSelectConfig = {}
-): Promise<number[]> {
-  const { lang = 'zh', defaultSelected = [] } = config;
-
-  const inputPrompt = lang === 'zh'
-    ? `${symbols.success.color}${symbols.success.icon}${colors.reset} 空格选中/取消,回车确认: `
-    : `${symbols.success.color}${symbols.success.icon}${colors.reset} Space to toggle, Enter to confirm: `;
-
-  const hintText = buildHint(['arrows', 'space', 'all', 'invert', 'enter'], lang);
-  const hintLines = (hintText.match(/\n/g) || []).length + 1;
-
-  return new Promise((resolve) => {
-    let selectedIndex = 0;
-    let selectedItems = new Set(defaultSelected);
-    let isFirstRender = true;
-    let renderedLines = 0;
-
-    const stdin = process.stdin;
-    stdin.setRawMode(true);
-    stdin.resume();
-    stdin.setEncoding('utf8');
-
-    process.stdout.write('\x1b[?25l');
-
-    const cleanup = () => {
-      stdin.setRawMode(false);
-      stdin.removeListener('data', onKeyPress);
-
-      if (renderedLines > 0) {
-        process.stdout.write(`\x1b[${renderedLines}A`);
-        process.stdout.write('\x1b[J');
-      }
-
-      process.stdout.write('\x1b[?25h');
-      resolve(Array.from(selectedItems).sort((a, b) => a - b));
-    };
-
-    const render = () => {
-      const totalLines = 1 + 1 + options.length + 1 + hintLines;
-
-      if (!isFirstRender) {
-        process.stdout.write(`\x1b[${renderedLines}A`);
-        process.stdout.write('\x1b[J');
-      }
-      isFirstRender = false;
-
-      // Render input line
-      process.stdout.write('\x1b[2K\r');
-      process.stdout.write(`${theme.muted}${inputPrompt}${colors.reset}`);
-      const selectedText = lang === 'zh' ? `${selectedItems.size} 项已选` : `${selectedItems.size} selected`;
-      process.stdout.write(`${theme.active}${selectedText}${colors.reset}`);
-      console.log();
-      console.log();
-
-      // Render options with checkboxes
-      options.forEach((option, index) => {
-        const isCurrentLine = index === selectedIndex;
-        const isChecked = selectedItems.has(index);
-
-        const prefix = isCurrentLine ? `${theme.active}❯ ` : '  ';
-        const checkbox = isChecked ? `${theme.success}◉` : `${theme.muted}○`;
-        const textColor = isCurrentLine ? theme.active : (isChecked ? theme.title : colors.reset);
-
-        console.log(`${prefix}${checkbox} ${textColor}${option}${colors.reset}`);
-      });
-
-      console.log();
-      const indent = '  ';
-      const indentedHint = hintText.split('\n').map(line => indent + line).join('\n');
-      console.log(indentedHint);
-
-      renderedLines = totalLines;
-    };
-
-    const onKeyPress = (key: string) => {
-      if (key === '\u001b[A') { // Up arrow
-        selectedIndex = selectedIndex > 0 ? selectedIndex - 1 : options.length - 1;
-        render();
-      } else if (key === '\u001b[B') { // Down arrow
-        selectedIndex = selectedIndex < options.length - 1 ? selectedIndex + 1 : 0;
-        render();
-      } else if (key === ' ') { // Space
-        if (selectedItems.has(selectedIndex)) {
-          selectedItems.delete(selectedIndex);
-        } else {
-          selectedItems.add(selectedIndex);
-        }
-        render();
-      } else if (key.toUpperCase() === 'A') { // A - select all
-        selectedItems.clear();
-        for (let i = 0; i < options.length; i++) {
-          selectedItems.add(i);
-        }
-        render();
-      } else if (key.toUpperCase() === 'I') { // I - invert
-        const newSelected = new Set<number>();
-        for (let i = 0; i < options.length; i++) {
-          if (!selectedItems.has(i)) {
-            newSelected.add(i);
-          }
-        }
-        selectedItems = newSelected;
-        render();
-      } else if (key === '\r') { // Enter
-        cleanup();
-      } else if (key === '\u0003') { // Ctrl+C
-        stdin.setRawMode(false);
-        stdin.removeListener('data', onKeyPress);
-        process.stdout.write('\x1b[?25h');
-        showGoodbye(lang);
-        process.exit(0);
-      }
-    };
-
-    stdin.on('data', onKeyPress);
-    render();
-  });
-}
+// Export individual functions for direct use
+export { selectMenu, selectMultiMenu, askYesNo, askInput, askNumber };

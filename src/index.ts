@@ -5,5 +5,8 @@
 
 export * from './types';
 export * from './components';
-export * from './menu';
+export * from './menu-core';
+export * from './menu-single';
+export * from './menu-multi';
 export * from './input';
+export * from './menu';

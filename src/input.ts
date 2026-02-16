@@ -57,8 +57,16 @@ export async function askInput(
       if (key === '\u0003') {
         stdin.setRawMode(false);
         stdin.removeListener('data', onData);
+
+        // Clear current line
+        stdout.write('\r\x1b[K');
+
+        // Show cursor
         stdout.write('\x1b[?25h');
+
+        // Show goodbye message
         showGoodbye(lang);
+
         process.exit(0);
       }
 
@@ -200,8 +208,16 @@ export async function askYesNo(
       } else if (key === '\u0003') { // Ctrl+C
         stdin.setRawMode(false);
         stdin.removeListener('data', onKeyPress);
+
+        // Clear current line
+        process.stdout.write('\r\x1b[K');
+
+        // Show cursor
         process.stdout.write('\x1b[?25h');
+
+        // Show goodbye message
         showGoodbye(lang);
+
         process.exit(0);
       } else {
         // Ignore all other keys - re-render to clear any echo
