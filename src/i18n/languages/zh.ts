@@ -16,10 +16,11 @@ export const zh: LanguageMap = {
     space: '空格 选中/取消',
     enter: '⏎ 确认',
     numbers: '0-9 输入序号',
-    letters: 'A-Z 字母选择',
+    letters: '字母 快捷键',
     selectAll: 'A 全选',
     invert: 'I 反选',
-    yesNo: 'Y/N 快捷键'
+    yesNo: 'Y/N 快捷键',
+    exit: 'Ctrl+C 退出'
   },
   messages: {
     success: '成功',

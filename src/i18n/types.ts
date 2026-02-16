@@ -26,6 +26,7 @@ export interface LanguageMap {
     selectAll: string;
     invert: string;
     yesNo: string;
+    exit: string;
   };
   messages: {
     success: string;

@@ -9,23 +9,24 @@ import { initTerminal, restoreTerminal, clearMenu, TerminalState } from '../../c
 import { KEY_CODES, isEnter, isCtrlC, isSpace, normalizeLetter } from '../../core/keyboard.js';
 import { renderOption, renderInputPrompt, renderHints, renderBlankLines, renderSectionLabel } from '../../core/renderer.js';
 import { colors } from '../../core/colors.js';
+import { t } from '../../i18n/registry.js';
 
 /**
  * Generate hints based on menu configuration
  */
 function generateHints(allowSelectAll: boolean, allowInvert: boolean): string[] {
-  const hints: string[] = ['↑↓ 方向键', '空格 选中/取消'];
+  const hints: string[] = [t('hints.arrows'), t('hints.space')];
 
   if (allowSelectAll) {
-    hints.push('A 全选');
+    hints.push(t('hints.selectAll'));
   }
 
   if (allowInvert) {
-    hints.push('I 反选');
+    hints.push(t('hints.invert'));
   }
 
-  hints.push('⏎ 确认');
-  hints.push(`${colors.red}Ctrl+C 退出${colors.reset}`);
+  hints.push(t('hints.enter'));
+  hints.push(`${colors.red}${t('hints.exit')}${colors.reset}`);
 
   return hints;
 }
@@ -39,7 +40,7 @@ export async function showCheckboxMenu(config: CheckboxMenuConfig): Promise<Chec
   const {
     options,
     title,
-    prompt = '空格选中/取消,回车确认',
+    prompt,
     hints,
     layout = { ...LAYOUT_PRESETS.SUB_MENU, order: ['input', 'options', 'hints'] },
     defaultSelected = [],
@@ -49,6 +50,9 @@ export async function showCheckboxMenu(config: CheckboxMenuConfig): Promise<Chec
     allowInvert = true,
     onExit
   } = config;
+
+  // Use i18n for default prompt if not provided
+  const displayPrompt = prompt || t('menus.multiSelectPrompt');
 
   // Generate hints dynamically if not provided
   const displayHints = hints || generateHints(allowSelectAll, allowInvert);
@@ -125,8 +129,8 @@ export async function showCheckboxMenu(config: CheckboxMenuConfig): Promise<Chec
         case 'input':
           if (layout.visible.input) {
             const selectedCount = selected.size;
-            const displayValue = `${selectedCount} 项已选`;
-            renderInputPrompt(prompt, displayValue);
+            const displayValue = `${selectedCount} ${t('menus.selectedCount')}`;
+            renderInputPrompt(displayPrompt, displayValue);
             lineCount++;
           }
           break;

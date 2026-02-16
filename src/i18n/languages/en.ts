@@ -16,10 +16,11 @@ export const en: LanguageMap = {
     space: 'Space Toggle',
     enter: '⏎ Confirm',
     numbers: '0-9 Number keys',
-    letters: 'A-Z Letter keys',
+    letters: 'Letter Shortcuts',
     selectAll: 'A Select all',
     invert: 'I Invert',
-    yesNo: 'Y/N Quick keys'
+    yesNo: 'Y/N Quick keys',
+    exit: 'Ctrl+C Exit'
   },
   messages: {
     success: 'Success',

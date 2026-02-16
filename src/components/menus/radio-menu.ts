@@ -9,23 +9,24 @@ import { initTerminal, restoreTerminal, clearMenu, TerminalState } from '../../c
 import { KEY_CODES, isEnter, isCtrlC, isNumberKey, isLetterKey, normalizeLetter } from '../../core/keyboard.js';
 import { renderHeader, renderOption, renderInputPrompt, renderHints, renderBlankLines, renderSectionLabel } from '../../core/renderer.js';
 import { colors } from '../../core/colors.js';
+import { t } from '../../i18n/registry.js';
 
 /**
  * Generate hints based on menu configuration
  */
 function generateHints(allowNumberKeys: boolean, allowLetterKeys: boolean): string[] {
-  const hints: string[] = ['↑↓ 方向键'];
+  const hints: string[] = [t('hints.arrows')];
 
   if (allowNumberKeys) {
-    hints.push('0-9 输入序号');
+    hints.push(t('hints.numbers'));
   }
 
   if (allowLetterKeys) {
-    hints.push('字母 快捷键');
+    hints.push(t('hints.letters'));
   }
 
-  hints.push('⏎ 确认');
-  hints.push(`${colors.red}Ctrl+C 退出${colors.reset}`);
+  hints.push(t('hints.enter'));
+  hints.push(`${colors.red}${t('hints.exit')}${colors.reset}`);
 
   return hints;
 }
@@ -39,7 +40,7 @@ export async function showRadioMenu(config: RadioMenuConfig): Promise<RadioMenuR
   const {
     options,
     title,
-    prompt = '输入选项或用↑↓选择,回车确认',
+    prompt,
     hints,
     layout = LAYOUT_PRESETS.MAIN_MENU,
     defaultIndex = 0,
@@ -47,6 +48,9 @@ export async function showRadioMenu(config: RadioMenuConfig): Promise<RadioMenuR
     allowLetterKeys = false,
     onExit
   } = config;
+
+  // Use i18n for default prompt if not provided
+  const displayPrompt = prompt || t('menus.selectPrompt');
 
   // Generate hints dynamically if not provided
   const displayHints = hints || generateHints(allowNumberKeys, allowLetterKeys);
@@ -157,7 +161,7 @@ export async function showRadioMenu(config: RadioMenuConfig): Promise<RadioMenuR
               }
             }
 
-            renderInputPrompt(prompt, displayValue);
+            renderInputPrompt(displayPrompt, displayValue);
             lineCount++;
           }
           break;
