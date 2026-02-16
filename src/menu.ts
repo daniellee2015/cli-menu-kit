@@ -23,10 +23,20 @@ export async function selectMenu(
   options: Array<string | MenuOption>,
   config: MenuConfig = {}
 ): Promise<number> {
-  const { lang = 'zh', type = 'main' } = config;
-  const inputPrompt = lang === 'zh'
-    ? `${symbols.success.color}${symbols.success.icon}${colors.reset} 输入选项或用↑↓选择,回车确认: `
-    : `${symbols.success.color}${symbols.success.icon}${colors.reset} Type option or use ↑↓ to select, Enter to confirm: `;
+  const {
+    lang = 'zh',
+    type = 'main',
+    title,
+    prompt,
+    showHints = true
+  } = config;
+
+  // Default prompts based on type
+  const defaultPrompt = type === 'main'
+    ? (lang === 'zh' ? '请选择一个选项' : 'Please select an option')
+    : undefined;
+
+  const finalPrompt = prompt !== undefined ? prompt : defaultPrompt;
 
   // Choose hint keys based on menu type
   let hintKeys: Array<'arrows' | 'number' | 'letter' | 'enter' | 'esc'>;
@@ -38,8 +48,8 @@ export async function selectMenu(
     hintKeys = ['arrows', 'number', 'enter'];
   }
 
-  const hintText = buildHint(hintKeys, lang);
-  const hintLines = (hintText.match(/\n/g) || []).length + 1;
+  const hintText = showHints ? buildHint(hintKeys, lang) : '';
+  const hintLines = hintText ? (hintText.match(/\n/g) || []).length + 1 : 0;
 
   return new Promise((resolve) => {
     let selectedIndex = 0;
@@ -68,44 +78,42 @@ export async function selectMenu(
     };
 
     const render = () => {
-      const totalLines = 1 + 1 + options.length + 1 + hintLines;
+      // Calculate total lines:
+      // - title lines (if provided)
+      // - 1 blank line after title
+      // - N option lines
+      // - 1 blank line before prompt
+      // - 1 prompt line (if provided)
+      // - 1 blank line before hints (if hints shown)
+      // - M hint lines (if hints shown)
+
+      let titleLines = 0;
+      if (title) {
+        titleLines = (title.match(/\n/g) || []).length + 1;
+      }
+
+      let totalLines = 0;
+      if (title) totalLines += titleLines + 1; // title + blank line
+      totalLines += options.length; // options
+      if (finalPrompt) totalLines += 2; // blank line + prompt
+      if (showHints && hintText) totalLines += 1 + hintLines; // blank line + hints
 
       if (!isFirstRender) {
         // Move cursor to start position
         process.stdout.write(`\x1b[${renderedLines}A`);
       }
 
-      // Clear and render input line
-      process.stdout.write('\x1b[2K\r');
-      process.stdout.write(`${theme.muted}${inputPrompt}${colors.reset}`);
-
-      // Display current selection
-      let displayValue = '';
-      if (options[selectedIndex]) {
-        const option = options[selectedIndex];
-        if (typeof option === 'string') {
-          // Check if option has number prefix
-          const numMatch = option.match(/^(\d+)\./);
-          if (numMatch) {
-            displayValue = numMatch[1];
-          } else {
-            displayValue = String(selectedIndex + 1);
-          }
-        } else if (option.label) {
-          const match = option.label.match(/^([^.]+)\./);
-          if (match) {
-            displayValue = match[1];
-          } else {
-            displayValue = String(selectedIndex + 1);
-          }
-        }
+      // Render title if provided
+      if (title) {
+        const titleLinesArray = title.split('\n');
+        titleLinesArray.forEach(line => {
+          process.stdout.write('\x1b[2K\r');
+          console.log(`  ${theme.primary}${line}${colors.reset}`);
+        });
+        // Blank line after title
+        process.stdout.write('\x1b[2K');
+        console.log();
       }
-      process.stdout.write(`${theme.active}${displayValue}${colors.reset}`);
-      console.log();
-
-      // Clear blank line
-      process.stdout.write('\x1b[2K');
-      console.log();
 
       // Render menu options (clear each line before rendering)
       options.forEach((option, index) => {
@@ -155,18 +163,30 @@ export async function selectMenu(
         }
       });
 
-      // Clear blank line before hint
-      process.stdout.write('\x1b[2K');
-      console.log();
-
-      // Clear and render hint lines
-      const indent = '  ';
-      const indentedHint = hintText.split('\n').map(line => indent + line).join('\n');
-      const hintLinesArray = indentedHint.split('\n');
-      hintLinesArray.forEach(line => {
+      // Render prompt if provided
+      if (finalPrompt) {
+        // Blank line before prompt
+        process.stdout.write('\x1b[2K');
+        console.log();
+        // Prompt line
         process.stdout.write('\x1b[2K\r');
-        console.log(line);
-      });
+        console.log(`  ${theme.muted}${finalPrompt}${colors.reset}`);
+      }
+
+      // Render hints if enabled
+      if (showHints && hintText) {
+        // Blank line before hints
+        process.stdout.write('\x1b[2K');
+        console.log();
+        // Hint lines
+        const indent = '  ';
+        const indentedHint = hintText.split('\n').map(line => indent + line).join('\n');
+        const hintLinesArray = indentedHint.split('\n');
+        hintLinesArray.forEach(line => {
+          process.stdout.write('\x1b[2K\r');
+          console.log(line);
+        });
+      }
 
       renderedLines = totalLines;
       isFirstRender = false;

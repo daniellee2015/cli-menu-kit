@@ -14,6 +14,9 @@ export type HintKey = 'arrows' | 'number' | 'letter' | 'enter' | 'esc' | 'space'
 export interface MenuConfig {
   lang?: 'zh' | 'en';
   type?: MenuType;
+  title?: string;           // Menu header title
+  prompt?: string;          // Prompt message between options and hints
+  showHints?: boolean;      // Whether to show operation hints (default: true)
 }
 
 export interface MultiSelectConfig {

@@ -8,7 +8,6 @@ const { selectMenu, showSuccess, colors, theme } = require('../dist');
 
 async function test() {
   console.clear();
-  console.log(`\n${theme.active}=== CLI Menu Kit 测试 ===${colors.reset}\n`);
 
   const options = [
     '1. 选项一 - 这是第一个选项',
@@ -17,9 +16,13 @@ async function test() {
     '4. 退出 - 退出测试'
   ];
 
-  console.log('  请选择一个选项（用↑↓或数字1-4）:\n');
-
-  const selected = await selectMenu(options, { lang: 'zh', type: 'main' });
+  const selected = await selectMenu(options, {
+    lang: 'zh',
+    type: 'main',
+    title: '=== CLI Menu Kit 测试 ===',
+    prompt: '请选择一个选项',
+    showHints: true
+  });
 
   console.log();
   showSuccess(`你选择了: ${options[selected]}`);
