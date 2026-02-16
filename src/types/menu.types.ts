@@ -5,9 +5,12 @@
 import { MenuLayout } from './layout.types.js';
 
 /**
- * Menu option (can be string or object with label)
+ * Menu option (can be string, object with label, or section header)
  */
-export type MenuOption = string | { label: string; value?: string };
+export type MenuOption =
+  | string
+  | { label: string; value?: string }
+  | { type: 'separator'; label?: string };
 
 /**
  * Base menu configuration

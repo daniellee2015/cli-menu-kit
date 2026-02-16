@@ -118,6 +118,18 @@ export function renderSeparator(char: string = '─', width?: number): void {
 }
 
 /**
+ * Render a section label (menu grouping)
+ * @param label - Label text (optional)
+ */
+export function renderSectionLabel(label?: string): void {
+  if (label) {
+    writeLine(`  ${colors.dim}────── ${label} ──────${colors.reset}`);
+  } else {
+    writeLine('');
+  }
+}
+
+/**
  * Render a message with icon
  * @param type - Message type (success, error, warning, info, question)
  * @param message - Message text

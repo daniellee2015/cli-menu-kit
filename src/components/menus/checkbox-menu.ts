@@ -7,7 +7,7 @@ import { CheckboxMenuConfig, CheckboxMenuResult, MenuOption } from '../../types/
 import { LAYOUT_PRESETS } from '../../types/layout.types.js';
 import { initTerminal, restoreTerminal, clearMenu, TerminalState } from '../../core/terminal.js';
 import { KEY_CODES, isEnter, isCtrlC, isSpace, normalizeLetter } from '../../core/keyboard.js';
-import { renderOption, renderInputPrompt, renderHints, renderBlankLines } from '../../core/renderer.js';
+import { renderOption, renderInputPrompt, renderHints, renderBlankLines, renderSectionLabel } from '../../core/renderer.js';
 import { colors } from '../../core/colors.js';
 
 /**
@@ -40,10 +40,49 @@ export async function showCheckboxMenu(config: CheckboxMenuConfig): Promise<Chec
   const selected = new Set<number>(defaultSelected);
   const state = initTerminal();
 
-  // Extract option values
-  const optionValues = options.map(opt =>
-    typeof opt === 'string' ? opt : opt.label
-  );
+  // Separate selectable options from separators
+  const selectableIndices: number[] = [];
+  const optionData: Array<{ value: string; isSeparator: boolean; label?: string }> = [];
+
+  options.forEach((opt, index) => {
+    if (typeof opt === 'object' && 'type' in opt && opt.type === 'separator') {
+      optionData.push({ value: '', isSeparator: true, label: opt.label });
+    } else {
+      let value: string;
+      if (typeof opt === 'string') {
+        value = opt;
+      } else if ('value' in opt) {
+        value = opt.value ?? opt.label ?? '';
+      } else {
+        value = opt.label ?? '';
+      }
+      optionData.push({ value, isSeparator: false });
+      selectableIndices.push(index);
+    }
+  });
+
+  // Ensure cursorIndex points to a selectable option
+  if (!selectableIndices.includes(cursorIndex)) {
+    cursorIndex = selectableIndices[0] || 0;
+  }
+
+  // Helper function to get next/previous selectable index
+  const getNextSelectableIndex = (currentIndex: number, direction: 'up' | 'down'): number => {
+    let nextIndex = currentIndex;
+    const maxAttempts = options.length;
+    let attempts = 0;
+
+    do {
+      if (direction === 'up') {
+        nextIndex = nextIndex > 0 ? nextIndex - 1 : options.length - 1;
+      } else {
+        nextIndex = nextIndex < options.length - 1 ? nextIndex + 1 : 0;
+      }
+      attempts++;
+    } while (!selectableIndices.includes(nextIndex) && attempts < maxAttempts);
+
+    return selectableIndices.includes(nextIndex) ? nextIndex : currentIndex;
+  };
 
   // Render function
   const render = () => {
@@ -70,8 +109,13 @@ export async function showCheckboxMenu(config: CheckboxMenuConfig): Promise<Chec
           break;
 
         case 'options':
-          optionValues.forEach((option, index) => {
-            renderOption(option, selected.has(index), index === cursorIndex);
+          optionData.forEach((item, index) => {
+            if (item.isSeparator) {
+              // Render section label
+              renderSectionLabel(item.label);
+            } else {
+              renderOption(item.value, selected.has(index), index === cursorIndex);
+            }
             lineCount++;
           });
           break;
@@ -129,7 +173,15 @@ export async function showCheckboxMenu(config: CheckboxMenuConfig): Promise<Chec
         const indices = Array.from(selected).sort((a, b) => a - b);
         const values = indices.map(i => {
           const option = options[i];
-          return typeof option === 'string' ? option : option.value || option.label;
+          if (typeof option === 'string') {
+            return option;
+          } else if ('type' in option && option.type === 'separator') {
+            return '';
+          } else if ('value' in option) {
+            return option.value ?? option.label ?? '';
+          } else {
+            return option.label ?? '';
+          }
         });
 
         resolve({ indices, values });
@@ -138,37 +190,38 @@ export async function showCheckboxMenu(config: CheckboxMenuConfig): Promise<Chec
 
       // Handle Space (toggle selection)
       if (isSpace(key)) {
-        if (selected.has(cursorIndex)) {
-          selected.delete(cursorIndex);
-        } else {
-          // Check max selections
-          if (!maxSelections || selected.size < maxSelections) {
-            selected.add(cursorIndex);
+        // Only toggle if cursor is on a selectable item
+        if (selectableIndices.includes(cursorIndex)) {
+          if (selected.has(cursorIndex)) {
+            selected.delete(cursorIndex);
+          } else {
+            // Check max selections
+            if (!maxSelections || selected.size < maxSelections) {
+              selected.add(cursorIndex);
+            }
           }
+          render();
         }
-        render();
         return;
       }
 
       // Handle arrow keys
       if (key === KEY_CODES.UP) {
-        cursorIndex = cursorIndex > 0 ? cursorIndex - 1 : options.length - 1;
+        cursorIndex = getNextSelectableIndex(cursorIndex, 'up');
         render();
         return;
       }
 
       if (key === KEY_CODES.DOWN) {
-        cursorIndex = cursorIndex < options.length - 1 ? cursorIndex + 1 : 0;
+        cursorIndex = getNextSelectableIndex(cursorIndex, 'down');
         render();
         return;
       }
 
       // Handle 'A' (select all)
       if (allowSelectAll && normalizeLetter(key) === 'a') {
-        if (!maxSelections || maxSelections >= options.length) {
-          for (let i = 0; i < options.length; i++) {
-            selected.add(i);
-          }
+        if (!maxSelections || maxSelections >= selectableIndices.length) {
+          selectableIndices.forEach(i => selected.add(i));
           render();
         }
         return;
@@ -177,13 +230,13 @@ export async function showCheckboxMenu(config: CheckboxMenuConfig): Promise<Chec
       // Handle 'I' (invert selection)
       if (allowInvert && normalizeLetter(key) === 'i') {
         const newSelected = new Set<number>();
-        for (let i = 0; i < options.length; i++) {
+        selectableIndices.forEach(i => {
           if (!selected.has(i)) {
             if (!maxSelections || newSelected.size < maxSelections) {
               newSelected.add(i);
             }
           }
-        }
+        });
         selected.clear();
         newSelected.forEach(i => selected.add(i));
         render();

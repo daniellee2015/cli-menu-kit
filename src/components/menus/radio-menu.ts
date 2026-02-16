@@ -7,7 +7,7 @@ import { RadioMenuConfig, RadioMenuResult, MenuOption } from '../../types/menu.t
 import { LAYOUT_PRESETS } from '../../types/layout.types.js';
 import { initTerminal, restoreTerminal, clearMenu, TerminalState } from '../../core/terminal.js';
 import { KEY_CODES, isEnter, isCtrlC, isNumberKey, isLetterKey, normalizeLetter } from '../../core/keyboard.js';
-import { renderHeader, renderOption, renderInputPrompt, renderHints, renderBlankLines } from '../../core/renderer.js';
+import { renderHeader, renderOption, renderInputPrompt, renderHints, renderBlankLines, renderSectionLabel } from '../../core/renderer.js';
 import { colors } from '../../core/colors.js';
 
 /**
@@ -37,10 +37,49 @@ export async function showRadioMenu(config: RadioMenuConfig): Promise<RadioMenuR
   let selectedIndex = Math.max(0, Math.min(defaultIndex, options.length - 1));
   const state = initTerminal();
 
-  // Extract option values
-  const optionValues = options.map(opt =>
-    typeof opt === 'string' ? opt : opt.label
-  );
+  // Separate selectable options from separators
+  const selectableIndices: number[] = [];
+  const optionData: Array<{ value: string; isSeparator: boolean; label?: string }> = [];
+
+  options.forEach((opt, index) => {
+    if (typeof opt === 'object' && 'type' in opt && opt.type === 'separator') {
+      optionData.push({ value: '', isSeparator: true, label: opt.label });
+    } else {
+      let value: string;
+      if (typeof opt === 'string') {
+        value = opt;
+      } else if ('value' in opt) {
+        value = opt.value ?? opt.label ?? '';
+      } else {
+        value = opt.label ?? '';
+      }
+      optionData.push({ value, isSeparator: false });
+      selectableIndices.push(index);
+    }
+  });
+
+  // Ensure selectedIndex points to a selectable option
+  if (!selectableIndices.includes(selectedIndex)) {
+    selectedIndex = selectableIndices[0] || 0;
+  }
+
+  // Helper function to get next/previous selectable index
+  const getNextSelectableIndex = (currentIndex: number, direction: 'up' | 'down'): number => {
+    let nextIndex = currentIndex;
+    const maxAttempts = options.length;
+    let attempts = 0;
+
+    do {
+      if (direction === 'up') {
+        nextIndex = nextIndex > 0 ? nextIndex - 1 : options.length - 1;
+      } else {
+        nextIndex = nextIndex < options.length - 1 ? nextIndex + 1 : 0;
+      }
+      attempts++;
+    } while (!selectableIndices.includes(nextIndex) && attempts < maxAttempts);
+
+    return selectableIndices.includes(nextIndex) ? nextIndex : currentIndex;
+  };
 
   // Render function
   const render = () => {
@@ -65,13 +104,18 @@ export async function showRadioMenu(config: RadioMenuConfig): Promise<RadioMenuR
           break;
 
         case 'options':
-          optionValues.forEach((option, index) => {
-            // Extract number prefix if exists
-            const match = option.match(/^(\d+)\.\s*/);
-            const prefix = match ? '' : `${index + 1}. `;
+          optionData.forEach((item, index) => {
+            if (item.isSeparator) {
+              // Render section label
+              renderSectionLabel(item.label);
+            } else {
+              // Extract number prefix if exists
+              const match = item.value.match(/^(\d+)\.\s*/);
+              const prefix = match ? '' : `${selectableIndices.indexOf(index) + 1}. `;
 
-            // For radio menus, don't show selection indicator (pass undefined instead of false)
-            renderOption(option, undefined as any, index === selectedIndex, prefix);
+              // For radio menus, don't show selection indicator (pass undefined instead of false)
+              renderOption(item.value, undefined as any, index === selectedIndex, prefix);
+            }
             lineCount++;
           });
           break;
@@ -80,12 +124,14 @@ export async function showRadioMenu(config: RadioMenuConfig): Promise<RadioMenuR
           if (layout.visible.input) {
             // Calculate display value (current selection number)
             let displayValue = '';
-            const currentOption = optionValues[selectedIndex];
-            const match = currentOption?.match(/^([^.]+)\./);
-            if (match) {
-              displayValue = match[1];
-            } else {
-              displayValue = String(selectedIndex + 1);
+            const currentItem = optionData[selectedIndex];
+            if (currentItem && !currentItem.isSeparator) {
+              const match = currentItem.value.match(/^([^.]+)\./);
+              if (match) {
+                displayValue = match[1];
+              } else {
+                displayValue = String(selectableIndices.indexOf(selectedIndex) + 1);
+              }
             }
 
             renderInputPrompt(prompt, displayValue);
@@ -138,9 +184,16 @@ export async function showRadioMenu(config: RadioMenuConfig): Promise<RadioMenuR
         restoreTerminal(state);
 
         const selectedOption = options[selectedIndex];
-        const value = typeof selectedOption === 'string'
-          ? selectedOption
-          : selectedOption.value || selectedOption.label;
+        let value: string;
+        if (typeof selectedOption === 'string') {
+          value = selectedOption;
+        } else if ('type' in selectedOption && selectedOption.type === 'separator') {
+          value = '';
+        } else if ('value' in selectedOption) {
+          value = selectedOption.value ?? selectedOption.label ?? '';
+        } else {
+          value = selectedOption.label ?? '';
+        }
 
         resolve({
           index: selectedIndex,
@@ -151,13 +204,13 @@ export async function showRadioMenu(config: RadioMenuConfig): Promise<RadioMenuR
 
       // Handle arrow keys
       if (key === KEY_CODES.UP) {
-        selectedIndex = selectedIndex > 0 ? selectedIndex - 1 : options.length - 1;
+        selectedIndex = getNextSelectableIndex(selectedIndex, 'up');
         render();
         return;
       }
 
       if (key === KEY_CODES.DOWN) {
-        selectedIndex = selectedIndex < options.length - 1 ? selectedIndex + 1 : 0;
+        selectedIndex = getNextSelectableIndex(selectedIndex, 'down');
         render();
         return;
       }
@@ -165,8 +218,8 @@ export async function showRadioMenu(config: RadioMenuConfig): Promise<RadioMenuR
       // Handle number keys
       if (allowNumberKeys && isNumberKey(key)) {
         const num = parseInt(key, 10);
-        if (num > 0 && num <= options.length) {
-          selectedIndex = num - 1;
+        if (num > 0 && num <= selectableIndices.length) {
+          selectedIndex = selectableIndices[num - 1];
           render();
         }
         return;
@@ -175,11 +228,13 @@ export async function showRadioMenu(config: RadioMenuConfig): Promise<RadioMenuR
       // Handle letter keys
       if (allowLetterKeys && isLetterKey(key)) {
         const letter = normalizeLetter(key);
-        const index = optionValues.findIndex(opt => {
-          const match = opt.match(/^([a-zA-Z])\./i);
+        const index = selectableIndices.find(idx => {
+          const item = optionData[idx];
+          if (item.isSeparator) return false;
+          const match = item.value.match(/^([a-zA-Z])\./i);
           return match && match[1].toLowerCase() === letter;
         });
-        if (index !== -1) {
+        if (index !== undefined) {
           selectedIndex = index;
           render();
         }
