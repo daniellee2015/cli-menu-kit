@@ -118,6 +118,9 @@ export async function showRadioMenu(config: RadioMenuConfig): Promise<RadioMenuR
     }
   });
 
+  // Use MINIMAL layout for single-option menus
+  const effectiveLayout = selectableIndices.length === 1 ? LAYOUT_PRESETS.MINIMAL : layout;
+
   // Ensure selectedIndex points to a selectable option
   if (!selectableIndices.includes(selectedIndex)) {
     selectedIndex = selectableIndices[0] || 0;
@@ -147,17 +150,17 @@ export async function showRadioMenu(config: RadioMenuConfig): Promise<RadioMenuR
     let lineCount = 0;
 
     // Render based on layout order
-    layout.order.forEach(element => {
+    effectiveLayout.order.forEach(element => {
       // Add spacing before element
-      const spacingKey = `before${element.charAt(0).toUpperCase() + element.slice(1)}` as keyof typeof layout.spacing;
-      if (layout.spacing?.[spacingKey]) {
-        renderBlankLines(layout.spacing[spacingKey]);
-        lineCount += layout.spacing[spacingKey]!;
+      const spacingKey = `before${element.charAt(0).toUpperCase() + element.slice(1)}` as keyof typeof effectiveLayout.spacing;
+      if (effectiveLayout.spacing?.[spacingKey]) {
+        renderBlankLines(effectiveLayout.spacing[spacingKey]);
+        lineCount += effectiveLayout.spacing[spacingKey]!;
       }
 
       switch (element) {
         case 'header':
-          if (layout.visible.header && title) {
+          if (effectiveLayout.visible.header && title) {
             renderHeader(`  ${title}`, colors.cyan);
             lineCount++;
           }
@@ -195,7 +198,7 @@ export async function showRadioMenu(config: RadioMenuConfig): Promise<RadioMenuR
           break;
 
         case 'input':
-          if (layout.visible.input) {
+          if (effectiveLayout.visible.input) {
             // Calculate display value (current selection number)
             let displayValue = '';
             const currentItem = optionData[selectedIndex];
@@ -214,7 +217,7 @@ export async function showRadioMenu(config: RadioMenuConfig): Promise<RadioMenuR
           break;
 
         case 'hints':
-          if (layout.visible.hints && displayHints.length > 0) {
+          if (effectiveLayout.visible.hints && displayHints.length > 0) {
             renderHints(displayHints);
             lineCount++;
           }
@@ -222,10 +225,10 @@ export async function showRadioMenu(config: RadioMenuConfig): Promise<RadioMenuR
       }
 
       // Add spacing after element
-      const afterSpacingKey = `after${element.charAt(0).toUpperCase() + element.slice(1)}` as keyof typeof layout.spacing;
-      if (layout.spacing?.[afterSpacingKey]) {
-        renderBlankLines(layout.spacing[afterSpacingKey]);
-        lineCount += layout.spacing[afterSpacingKey]!;
+      const afterSpacingKey = `after${element.charAt(0).toUpperCase() + element.slice(1)}` as keyof typeof effectiveLayout.spacing;
+      if (effectiveLayout.spacing?.[afterSpacingKey]) {
+        renderBlankLines(effectiveLayout.spacing[afterSpacingKey]);
+        lineCount += effectiveLayout.spacing[afterSpacingKey]!;
       }
     });
 
