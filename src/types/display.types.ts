@@ -53,6 +53,7 @@ export interface MessageConfig {
  */
 export interface SummaryTableConfig {
   title?: string;
+  titleAlign?: 'left' | 'center' | 'right';
   sections: Array<{
     header?: string;
     items: Array<{

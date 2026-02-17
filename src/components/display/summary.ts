@@ -40,7 +40,7 @@ function wrapText(text: string, maxWidth: number): string[] {
  * @param config - Summary table configuration
  */
 export function renderSummaryTable(config: SummaryTableConfig): void {
-  const { title, sections, width } = config;
+  const { title, titleAlign = 'center', sections, width } = config;
 
   const termWidth = getTerminalWidth();
   // Use full terminal width minus padding, or specified width
@@ -57,9 +57,25 @@ export function renderSummaryTable(config: SummaryTableConfig): void {
 
   // Title if provided
   if (title) {
-    const titlePadding = Math.floor((contentWidth - title.length) / 2);
-    const titleLine = ' '.repeat(titlePadding + 2) + colors.cyan + title + colors.reset;
-    const remainingSpace = boxWidth - titlePadding - title.length - 4;
+    let titleLine: string;
+    let remainingSpace: number;
+
+    if (titleAlign === 'left') {
+      titleLine = `  ${colors.cyan}${title}${colors.reset}`;
+      const plainTitle = title;
+      remainingSpace = boxWidth - plainTitle.length - 4;
+    } else if (titleAlign === 'right') {
+      const plainTitle = title;
+      const rightPadding = contentWidth - plainTitle.length;
+      titleLine = ' '.repeat(rightPadding + 2) + colors.cyan + title + colors.reset;
+      remainingSpace = 2;
+    } else {
+      // center (default)
+      const titlePadding = Math.floor((contentWidth - title.length) / 2);
+      titleLine = ' '.repeat(titlePadding + 2) + colors.cyan + title + colors.reset;
+      remainingSpace = boxWidth - titlePadding - title.length - 4;
+    }
+
     writeLine(`│${titleLine}${' '.repeat(remainingSpace)}│`);
     writeLine(`│${' '.repeat(boxWidth - 2)}│`);
   }
