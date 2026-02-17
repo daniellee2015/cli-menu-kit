@@ -9,6 +9,33 @@ import { colors } from '../../core/colors.js';
 import { getTerminalWidth } from '../../core/terminal.js';
 
 /**
+ * Wrap text to fit within a specific width
+ */
+function wrapText(text: string, maxWidth: number): string[] {
+  const words = text.split(' ');
+  const lines: string[] = [];
+  let currentLine = '';
+
+  for (const word of words) {
+    const testLine = currentLine ? `${currentLine} ${word}` : word;
+    if (testLine.length <= maxWidth) {
+      currentLine = testLine;
+    } else {
+      if (currentLine) {
+        lines.push(currentLine);
+      }
+      currentLine = word;
+    }
+  }
+
+  if (currentLine) {
+    lines.push(currentLine);
+  }
+
+  return lines;
+}
+
+/**
  * Render a summary table
  * @param config - Summary table configuration
  */
@@ -16,7 +43,8 @@ export function renderSummaryTable(config: SummaryTableConfig): void {
   const { title, sections, width } = config;
 
   const termWidth = getTerminalWidth();
-  const boxWidth = width || Math.min(termWidth - 4, 60);
+  // Use full terminal width minus padding, or specified width
+  const boxWidth = width || Math.max(60, termWidth - 4);
 
   // Calculate content width (excluding borders and padding)
   const contentWidth = boxWidth - 4;
@@ -47,13 +75,36 @@ export function renderSummaryTable(config: SummaryTableConfig): void {
 
     // Section items
     section.items.forEach(item => {
-      const itemLine = `  ${item.key}:${' '.repeat(Math.max(1, 15 - item.key.length))}${item.value}`;
+      const keyPadding = 15;
+      const valueMaxWidth = contentWidth - keyPadding - 2; // 2 for leading spaces
 
-      // Remove ANSI codes for length calculation
-      const plainItemLine = itemLine.replace(/\x1b\[[0-9;]*m/g, '');
-      const remainingSpace = boxWidth - plainItemLine.length - 2;
+      // Check if value needs wrapping
+      const plainValue = item.value.replace(/\x1b\[[0-9;]*m/g, '');
 
-      writeLine(`│${itemLine}${' '.repeat(Math.max(0, remainingSpace))}│`);
+      if (plainValue.length > valueMaxWidth) {
+        // Wrap the value
+        const wrappedLines = wrapText(plainValue, valueMaxWidth);
+
+        // First line with key
+        const firstLine = `  ${item.key}:${' '.repeat(Math.max(1, keyPadding - item.key.length))}${wrappedLines[0]}`;
+        const plainFirstLine = firstLine.replace(/\x1b\[[0-9;]*m/g, '');
+        const remainingSpace = boxWidth - plainFirstLine.length - 2;
+        writeLine(`│${firstLine}${' '.repeat(Math.max(0, remainingSpace))}│`);
+
+        // Subsequent lines with indentation
+        for (let i = 1; i < wrappedLines.length; i++) {
+          const continuationLine = `  ${' '.repeat(keyPadding)}${wrappedLines[i]}`;
+          const plainContinuationLine = continuationLine.replace(/\x1b\[[0-9;]*m/g, '');
+          const contRemainingSpace = boxWidth - plainContinuationLine.length - 2;
+          writeLine(`│${continuationLine}${' '.repeat(Math.max(0, contRemainingSpace))}│`);
+        }
+      } else {
+        // No wrapping needed
+        const itemLine = `  ${item.key}:${' '.repeat(Math.max(1, keyPadding - item.key.length))}${item.value}`;
+        const plainItemLine = itemLine.replace(/\x1b\[[0-9;]*m/g, '');
+        const remainingSpace = boxWidth - plainItemLine.length - 2;
+        writeLine(`│${itemLine}${' '.repeat(Math.max(0, remainingSpace))}│`);
+      }
     });
 
     // Add spacing between sections (except after last section)
