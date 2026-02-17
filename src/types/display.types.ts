@@ -62,4 +62,10 @@ export interface SummaryTableConfig {
     }>;
   }>;
   width?: number;
+  colors?: {
+    title?: string;        // Color for main title
+    sectionHeader?: string; // Color for section headers
+    key?: string;          // Color for keys/labels
+    value?: string;        // Color for values
+  };
 }
