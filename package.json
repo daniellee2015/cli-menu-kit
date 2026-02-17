@@ -1,6 +1,6 @@
 {
   "name": "cli-menu-kit",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "A lightweight, customizable CLI menu system with keyboard shortcuts and real-time rendering",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
