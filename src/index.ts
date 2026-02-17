@@ -34,6 +34,11 @@ export {
   createInputPromptComponent
 } from './component-factories.js';
 
+// Export V2 Components (New Architecture)
+export { createFullHeaderComponentV2 } from './components/display/header-v2.js';
+export { createHintsComponentV2, createDynamicHintsComponent } from './components/display/hints-v2.js';
+export { createRadioMenuComponentV2 } from './components/menus/radio-menu-v2.js';
+
 // Export menu components
 export {
   showRadioMenu,
