@@ -5,15 +5,25 @@
 
 import { menuAPI as menu, inputAPI as input } from './api.js';
 import { renderSimpleHeader, renderSectionHeader } from './components/display/headers.js';
+import { renderHeader as renderFullHeader } from './components/display/header.js';
 import { renderHintsComponent } from './components/display/hints.js';
 
 /**
  * Header configuration
  */
 export interface HeaderConfig {
-  type: 'simple' | 'section' | 'none';
+  type: 'simple' | 'section' | 'full' | 'none';
   text?: string;
   width?: number;
+  // For 'full' type header
+  asciiArt?: string[];
+  title?: string;
+  description?: string;
+  version?: string;
+  url?: string;
+  menuTitle?: string;
+  boxWidth?: number;
+  color?: string;
 }
 
 /**
@@ -67,6 +77,17 @@ function renderHeader(config?: HeaderConfig): void {
     renderSimpleHeader(config.text);
   } else if (config.type === 'section' && config.text) {
     renderSectionHeader(config.text, config.width || 50);
+  } else if (config.type === 'full') {
+    renderFullHeader({
+      asciiArt: config.asciiArt,
+      title: config.title,
+      description: config.description,
+      version: config.version,
+      url: config.url,
+      menuTitle: config.menuTitle,
+      boxWidth: config.boxWidth,
+      color: config.color
+    });
   }
 }
 
