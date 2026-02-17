@@ -10,10 +10,14 @@ export { default } from './api.js';
 // Export Page Layout (Component-Based)
 export {
   renderPageV2,
-  createComponent,
+  screenManager,
+  hintManager,
+  computeLayout,
   type PageLayoutConfigV2,
   type AreaConfig,
-  type Component
+  type Component,
+  type Layout,
+  type Rect
 } from './layout.js';
 
 // Export Component Factories
@@ -25,7 +29,8 @@ export {
   createTableComponent,
   createListComponent,
   createSummaryTableComponent,
-  createCustomComponent
+  createRadioMenuComponent,
+  createInputPromptComponent
 } from './component-factories.js';
 
 // Export menu components

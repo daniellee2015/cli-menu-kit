@@ -52,6 +52,7 @@ export function restoreTerminal(state: TerminalState): void {
 
 /**
  * Clear the current menu display
+ * Only clears the lines that were rendered by this menu
  * @param state - Terminal state
  */
 export function clearMenu(state: TerminalState): void {
@@ -59,8 +60,18 @@ export function clearMenu(state: TerminalState): void {
     // Move cursor up to the start of the menu
     process.stdout.write(`\x1b[${state.renderedLines}A`);
 
-    // Clear from cursor to end of screen
-    process.stdout.write('\x1b[J');
+    // Clear each line individually
+    for (let i = 0; i < state.renderedLines; i++) {
+      process.stdout.write('\x1b[2K'); // Clear entire line
+      if (i < state.renderedLines - 1) {
+        process.stdout.write('\x1b[1B'); // Move down one line
+      }
+    }
+
+    // Move cursor back to start position
+    // After loop, cursor is at line renderedLines
+    // To get back to line 1, move up (renderedLines - 1)
+    process.stdout.write(`\x1b[${state.renderedLines - 1}A`);
 
     state.renderedLines = 0;
   }
