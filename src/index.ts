@@ -7,6 +7,15 @@
 export { menuAPI as menu, inputAPI as input, wizardAPI as wizard } from './api.js';
 export { default } from './api.js';
 
+// Export Page Layout System
+export {
+  renderPage,
+  type PageLayoutConfig,
+  type HeaderConfig as LayoutHeaderConfig,
+  type MainAreaConfig,
+  type FooterConfig
+} from './layout.js';
+
 // Export menu components
 export {
   showRadioMenu,
