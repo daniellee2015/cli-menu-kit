@@ -1,13 +1,14 @@
 /**
  * Page Layout System
- * 通用页面布局：Header + Main Area + Footer
+ * Universal page layout: Header + Main Area + Footer
  */
 
 import { menuAPI as menu, inputAPI as input } from './api.js';
 import { renderSimpleHeader, renderSectionHeader } from './components/display/headers.js';
+import { renderHints } from './core/renderer.js';
 
 /**
- * Header 配置
+ * Header configuration
  */
 export interface HeaderConfig {
   type: 'simple' | 'section' | 'none';
@@ -16,7 +17,7 @@ export interface HeaderConfig {
 }
 
 /**
- * Main Area 配置
+ * Main Area configuration
  */
 export interface MainAreaConfig {
   type: 'menu' | 'display' | 'interactive';
@@ -24,7 +25,7 @@ export interface MainAreaConfig {
 }
 
 /**
- * Footer 配置
+ * Footer configuration
  */
 export interface FooterConfig {
   menu?: {
@@ -46,7 +47,7 @@ export interface FooterConfig {
 }
 
 /**
- * 完整页面布局配置
+ * Complete page layout configuration
  */
 export interface PageLayoutConfig {
   header?: HeaderConfig;
@@ -55,7 +56,7 @@ export interface PageLayoutConfig {
 }
 
 /**
- * 渲染 Header
+ * Render header
  */
 function renderHeader(config?: HeaderConfig): void {
   if (!config || config.type === 'none') {
@@ -70,8 +71,8 @@ function renderHeader(config?: HeaderConfig): void {
 }
 
 /**
- * 渲染 Footer
- * 返回用户的选择/输入结果
+ * Render footer
+ * Returns user's selection/input result
  */
 async function renderFooter(config?: FooterConfig): Promise<any> {
   if (!config) {
@@ -80,8 +81,13 @@ async function renderFooter(config?: FooterConfig): Promise<any> {
 
   let result: any = null;
 
-  // 1. Menu (如果有)
+  // 1. Menu (if present)
   if (config.menu) {
+    // Render hints before menu interaction
+    if (config.hints && config.hints.length > 0) {
+      renderHints(config.hints);
+    }
+
     result = await menu.radio({
       options: config.menu.options,
       allowLetterKeys: config.menu.allowLetterKeys ?? true,
@@ -89,8 +95,13 @@ async function renderFooter(config?: FooterConfig): Promise<any> {
       preserveOnSelect: true
     });
   }
-  // 2. Input (如果有)
+  // 2. Input (if present)
   else if (config.input) {
+    // Render hints before input interaction
+    if (config.hints && config.hints.length > 0) {
+      renderHints(config.hints);
+    }
+
     result = await input.text({
       prompt: config.input.prompt,
       defaultValue: config.input.defaultValue,
@@ -98,7 +109,7 @@ async function renderFooter(config?: FooterConfig): Promise<any> {
     });
   }
 
-  // 3. Ask (如果有 - 通常在 Menu 或 Input 之后)
+  // 3. Ask (if present - usually after Menu or Input)
   if (config.ask) {
     const askResult = config.ask.horizontal
       ? await menu.booleanH(config.ask.question, config.ask.defaultValue ?? false)
@@ -111,7 +122,7 @@ async function renderFooter(config?: FooterConfig): Promise<any> {
 }
 
 /**
- * 渲染完整页面
+ * Render complete page
  *
  * @example
  * ```typescript
