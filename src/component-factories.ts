@@ -5,7 +5,7 @@
  * These are helper functions to simplify component creation
  */
 
-import { Component } from './layout-v2.js';
+import { Component } from './layout.js';
 import { renderHeader as renderFullHeader } from './components/display/header.js';
 import { renderSimpleHeader, renderSectionHeader } from './components/display/headers.js';
 import { renderHints as renderHintsCore } from './core/renderer.js';

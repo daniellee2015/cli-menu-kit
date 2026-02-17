@@ -6,3 +6,4 @@ dist/
 .ccb
 .ccb-instances
 .claude
+test/

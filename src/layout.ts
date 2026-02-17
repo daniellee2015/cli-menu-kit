@@ -1,169 +1,110 @@
 /**
- * Page Layout System
- * Universal page layout: Header + Main Area + Footer
+ * Page Layout V2 - Component-Based Architecture
+ *
+ * Core Principles:
+ * 1. Complete component decoupling
+ * 2. Each area (Header/Main/Footer) is a component container
+ * 3. Configuration-driven assembly
+ * 4. Page Layout is the unified entry point
  */
-
-import { menuAPI as menu, inputAPI as input } from './api.js';
-import { renderSimpleHeader, renderSectionHeader } from './components/display/headers.js';
-import { renderHeader as renderFullHeader } from './components/display/header.js';
-import { renderHintsComponent } from './components/display/hints.js';
 
 /**
- * Header configuration
+ * Base component interface
+ * Every component must implement this interface
  */
-export interface HeaderConfig {
-  type: 'simple' | 'section' | 'full' | 'none';
-  text?: string;
-  width?: number;
-  // For 'full' type header
-  asciiArt?: string[];
-  title?: string;
-  description?: string;
-  version?: string;
-  url?: string;
-  menuTitle?: string;
-  boxWidth?: number;
-  color?: string;
-}
-
-/**
- * Main Area configuration
- */
-export interface MainAreaConfig {
-  type: 'menu' | 'display' | 'interactive';
+export interface Component {
+  /** Component type identifier */
+  type: string;
+  /** Render function - returns void or Promise<void> */
   render: () => void | Promise<void>;
+  /** Optional component-specific configuration */
+  config?: any;
 }
 
 /**
- * Footer configuration
+ * Area configuration
+ * Each area (Header/Main/Footer) contains an array of components
  */
-export interface FooterConfig {
-  menu?: {
-    options: string[];
-    allowLetterKeys?: boolean;
-    allowNumberKeys?: boolean;
-  };
-  input?: {
-    prompt: string;
-    defaultValue?: string;
-    allowEmpty?: boolean;
-  };
-  ask?: {
-    question: string;
-    defaultValue?: boolean;
-    horizontal?: boolean;
-  };
-  hints?: string[];
+export interface AreaConfig {
+  /** Array of components to render in this area */
+  components: Component[];
 }
 
 /**
  * Complete page layout configuration
  */
-export interface PageLayoutConfig {
-  header?: HeaderConfig;
-  mainArea: MainAreaConfig;
-  footer?: FooterConfig;
+export interface PageLayoutConfigV2 {
+  /** Header area (optional) */
+  header?: AreaConfig;
+  /** Main area (optional) */
+  mainArea?: AreaConfig;
+  /** Footer area (optional) */
+  footer?: AreaConfig;
 }
 
 /**
- * Render header
+ * Render an area by executing all its components
  */
-function renderHeader(config?: HeaderConfig): void {
-  if (!config || config.type === 'none') {
+async function renderArea(area?: AreaConfig): Promise<void> {
+  if (!area || !area.components || area.components.length === 0) {
     return;
   }
 
-  if (config.type === 'simple' && config.text) {
-    renderSimpleHeader(config.text);
-  } else if (config.type === 'section' && config.text) {
-    renderSectionHeader(config.text, config.width || 50);
-  } else if (config.type === 'full') {
-    renderFullHeader({
-      asciiArt: config.asciiArt,
-      title: config.title,
-      description: config.description,
-      version: config.version,
-      url: config.url,
-      menuTitle: config.menuTitle,
-      boxWidth: config.boxWidth,
-      color: config.color
-    });
+  // Render each component in sequence
+  for (const component of area.components) {
+    await component.render();
   }
 }
 
 /**
- * Render footer
- * Returns user's selection/input result
- */
-async function renderFooter(config?: FooterConfig): Promise<any> {
-  if (!config) {
-    return null;
-  }
-
-  let result: any = null;
-
-  // 1. Menu (if present)
-  if (config.menu) {
-    result = await menu.radio({
-      options: config.menu.options,
-      allowLetterKeys: config.menu.allowLetterKeys ?? true,
-      allowNumberKeys: config.menu.allowNumberKeys ?? true,
-      preserveOnSelect: true
-    }, config.hints); // Pass hints as second parameter
-  }
-  // 2. Input (if present)
-  else if (config.input) {
-    result = await input.text({
-      prompt: config.input.prompt,
-      defaultValue: config.input.defaultValue,
-      allowEmpty: config.input.allowEmpty ?? false
-    });
-
-    // Render hints after input if provided
-    if (config.hints && config.hints.length > 0) {
-      renderHintsComponent({ hints: config.hints });
-    }
-  }
-
-  // 3. Ask (if present - usually after Menu or Input)
-  if (config.ask) {
-    const askResult = config.ask.horizontal
-      ? await menu.booleanH(config.ask.question, config.ask.defaultValue ?? false)
-      : await menu.booleanV(config.ask.question, config.ask.defaultValue ?? false);
-
-    return { ...result, confirmed: askResult };
-  }
-
-  return result;
-}
-
-/**
- * Render complete page
+ * Render complete page with component-based areas
+ *
+ * This is the unified entry point for all pages.
+ * All pages must use this function to render.
+ *
+ * @param config - Page layout configuration
+ * @returns Promise that resolves when rendering is complete
  *
  * @example
  * ```typescript
- * const result = await renderPage({
- *   header: { type: 'simple', text: 'My Page' },
+ * await renderPageV2({
+ *   header: {
+ *     components: [
+ *       { type: 'ascii-art', render: () => renderAsciiArt([...]) },
+ *       { type: 'title', render: () => renderTitle('My App') }
+ *     ]
+ *   },
  *   mainArea: {
- *     type: 'display',
- *     render: () => console.log('Content')
+ *     components: [
+ *       { type: 'menu', render: () => renderMenu([...]) }
+ *     ]
  *   },
  *   footer: {
- *     menu: { options: ['1. Save', 'b. Back'] },
- *     hints: ['↑↓ Navigate  Enter Confirm']
+ *     components: [
+ *       { type: 'hints', render: () => renderHints([...]) }
+ *     ]
  *   }
  * });
  * ```
  */
-export async function renderPage(config: PageLayoutConfig): Promise<any> {
-  // 1. Render Header
-  renderHeader(config.header);
+export async function renderPageV2(config: PageLayoutConfigV2): Promise<void> {
+  // 1. Render Header area
+  await renderArea(config.header);
 
-  // 2. Render Main Area
-  await config.mainArea.render();
+  // 2. Render Footer area (before main area, so hints show before interactive components)
+  await renderArea(config.footer);
 
-  // 3. Render Footer
-  const footerResult = await renderFooter(config.footer);
+  // 3. Render Main Area (may contain interactive components that block)
+  await renderArea(config.mainArea);
+}
 
-  return footerResult;
+/**
+ * Helper function to create a component
+ */
+export function createComponent(
+  type: string,
+  render: () => void | Promise<void>,
+  config?: any
+): Component {
+  return { type, render, config };
 }
