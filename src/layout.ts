@@ -53,7 +53,7 @@ export function computeLayout(rows?: number, cols?: number): Layout {
   const termRows = rows || process.stdout.rows || 24;
   const termCols = cols || process.stdout.columns || 80;
 
-  const headerHeight = 3; // Fixed header height
+  const headerHeight = 13; // Fixed header height (6 ASCII art + title + desc + separator)
   const footerHintsHeight = 1; // Fixed hints height
   const footerPromptHeight = 1; // Fixed prompt height
   const mainHeight = Math.max(1, termRows - headerHeight - footerHintsHeight - footerPromptHeight);

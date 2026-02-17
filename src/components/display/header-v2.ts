@@ -48,6 +48,11 @@ export function createFullHeaderComponentV2(config: FullHeaderConfig): Component
       lines.push('');
       lines.push(`${colors.dim}${'─'.repeat(Math.min(rect.width, 80))}${colors.reset}`);
 
+      // Fill remaining lines to match rect height
+      while (lines.length < rect.height) {
+        lines.push('');
+      }
+
       return lines;
     },
     config
