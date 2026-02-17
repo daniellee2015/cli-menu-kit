@@ -4,31 +4,11 @@
  */
 
 import { CheckboxMenuConfig, CheckboxMenuResult, MenuOption } from '../../types/menu.types.js';
-import { LAYOUT_PRESETS } from '../../types/layout.types.js';
 import { initTerminal, restoreTerminal, clearMenu, TerminalState } from '../../core/terminal.js';
 import { KEY_CODES, isEnter, isCtrlC, isSpace, normalizeLetter } from '../../core/keyboard.js';
-import { renderOption, renderInputPrompt, renderHints, renderBlankLines, renderSectionLabel } from '../../core/renderer.js';
+import { renderOption, renderInputPrompt, renderBlankLines, renderSectionLabel } from '../../core/renderer.js';
 import { colors } from '../../core/colors.js';
 import { t } from '../../i18n/registry.js';
-
-/**
- * Generate hints based on menu configuration
- */
-function generateHints(allowSelectAll: boolean, allowInvert: boolean): string[] {
-  const hints: string[] = [t('hints.arrows'), t('hints.space')];
-
-  if (allowSelectAll) {
-    hints.push(t('hints.selectAll'));
-  }
-
-  if (allowInvert) {
-    hints.push(t('hints.invert'));
-  }
-
-  hints.push(t('hints.enter'));
-
-  return hints;
-}
 
 /**
  * Show a checkbox menu (multi-select)
@@ -40,8 +20,6 @@ export async function showCheckboxMenu(config: CheckboxMenuConfig): Promise<Chec
     options,
     title,
     prompt,
-    hints,
-    layout = { ...LAYOUT_PRESETS.SUB_MENU, order: ['input', 'options', 'hints'] },
     defaultSelected = [],
     minSelections = 0,
     maxSelections,
@@ -54,9 +32,6 @@ export async function showCheckboxMenu(config: CheckboxMenuConfig): Promise<Chec
 
   // Use i18n for default prompt if not provided
   const displayPrompt = prompt || t('menus.multiSelectPrompt');
-
-  // Generate hints dynamically if not provided
-  const displayHints = hints || generateHints(allowSelectAll, allowInvert);
 
   // Validate options
   if (!options || options.length === 0) {
@@ -117,51 +92,30 @@ export async function showCheckboxMenu(config: CheckboxMenuConfig): Promise<Chec
     clearMenu(state);
     let lineCount = 0;
 
-    // Render based on layout order
-    layout.order.forEach(element => {
-      // Add spacing before element
-      const spacingKey = `before${element.charAt(0).toUpperCase() + element.slice(1)}` as keyof typeof layout.spacing;
-      if (layout.spacing?.[spacingKey]) {
-        renderBlankLines(layout.spacing[spacingKey]);
-        lineCount += layout.spacing[spacingKey]!;
+    // Render title if provided
+    if (title) {
+      renderBlankLines(1);
+      lineCount++;
+    }
+
+    // Render input prompt (show selected count)
+    const selectedCount = selected.size;
+    const displayValue = `${selectedCount} ${t('menus.selectedCount')}`;
+    renderInputPrompt(displayPrompt, displayValue);
+    lineCount++;
+
+    renderBlankLines(1);
+    lineCount++;
+
+    // Render options
+    optionData.forEach((item, index) => {
+      if (item.isSeparator) {
+        // Render section label
+        renderSectionLabel(item.label, separatorWidth);
+      } else {
+        renderOption(item.value, selected.has(index), index === cursorIndex);
       }
-
-      switch (element) {
-        case 'input':
-          if (layout.visible.input) {
-            const selectedCount = selected.size;
-            const displayValue = `${selectedCount} ${t('menus.selectedCount')}`;
-            renderInputPrompt(displayPrompt, displayValue);
-            lineCount++;
-          }
-          break;
-
-        case 'options':
-          optionData.forEach((item, index) => {
-            if (item.isSeparator) {
-              // Render section label
-              renderSectionLabel(item.label, separatorWidth);
-            } else {
-              renderOption(item.value, selected.has(index), index === cursorIndex);
-            }
-            lineCount++;
-          });
-          break;
-
-        case 'hints':
-          if (layout.visible.hints && displayHints.length > 0) {
-            renderHints(displayHints);
-            lineCount++;
-          }
-          break;
-      }
-
-      // Add spacing after element
-      const afterSpacingKey = `after${element.charAt(0).toUpperCase() + element.slice(1)}` as keyof typeof layout.spacing;
-      if (layout.spacing?.[afterSpacingKey]) {
-        renderBlankLines(layout.spacing[afterSpacingKey]);
-        lineCount += layout.spacing[afterSpacingKey]!;
-      }
+      lineCount++;
     });
 
     state.renderedLines = lineCount;

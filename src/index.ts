@@ -104,13 +104,6 @@ export {
 
 // Export types
 export type {
-  MenuLayout,
-  LayoutElement,
-  LayoutVisibility,
-  LayoutSpacing
-} from './types/layout.types.js';
-
-export type {
   MenuOption,
   BaseMenuConfig,
   RadioMenuConfig,
@@ -151,7 +144,6 @@ export type {
 
 // Export core utilities (for advanced users)
 export { KEY_CODES } from './core/keyboard.js';
-export { LAYOUT_PRESETS } from './types/layout.types.js';
 
 // Legacy exports (for backward compatibility)
 export * from './types';

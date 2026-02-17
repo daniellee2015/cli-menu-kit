@@ -2,8 +2,6 @@
  * Menu component types for CLI Menu Kit
  */
 
-import { MenuLayout } from './layout.types.js';
-
 /**
  * Menu option (can be string, object with label, or section header)
  */
@@ -21,12 +19,6 @@ export interface BaseMenuConfig {
 
   /** Input prompt text */
   prompt?: string;
-
-  /** Hint texts to display */
-  hints?: string[];
-
-  /** Layout configuration */
-  layout?: MenuLayout;
 
   /** Color for highlighted items */
   highlightColor?: string;

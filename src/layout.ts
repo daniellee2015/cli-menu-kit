@@ -86,7 +86,6 @@ async function renderFooter(config?: FooterConfig): Promise<any> {
       options: config.menu.options,
       allowLetterKeys: config.menu.allowLetterKeys ?? true,
       allowNumberKeys: config.menu.allowNumberKeys ?? true,
-      hints: config.hints,
       preserveOnSelect: true
     });
   }
