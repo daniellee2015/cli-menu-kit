@@ -10,6 +10,7 @@ export { default } from './api.js';
 // Export Page Layout (Component-Based)
 export {
   renderPageV2,
+  createCustomComponent,
   screenManager,
   hintManager,
   computeLayout,
