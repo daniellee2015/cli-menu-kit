@@ -7,7 +7,7 @@
 export { menuAPI as menu, inputAPI as input, wizardAPI as wizard } from './api.js';
 export { default } from './api.js';
 
-// Export Page Layout System
+// Export Page Layout System (V1 - Legacy)
 export {
   renderPage,
   type PageLayoutConfig,
@@ -15,6 +15,27 @@ export {
   type MainAreaConfig,
   type FooterConfig
 } from './layout.js';
+
+// Export Page Layout V2 (Component-Based)
+export {
+  renderPageV2,
+  createComponent,
+  type PageLayoutConfigV2,
+  type AreaConfig,
+  type Component
+} from './layout-v2.js';
+
+// Export Component Factories
+export {
+  createFullHeaderComponent,
+  createSimpleHeaderComponent,
+  createSectionHeaderComponent,
+  createHintsComponent,
+  createTableComponent,
+  createListComponent,
+  createSummaryTableComponent,
+  createCustomComponent
+} from './component-factories.js';
 
 // Export menu components
 export {
