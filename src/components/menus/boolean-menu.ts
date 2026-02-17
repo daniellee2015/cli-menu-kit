@@ -20,13 +20,14 @@ export async function showBooleanMenu(config: BooleanMenuConfig): Promise<Boolea
     yesText = '是',
     noText = '否',
     orientation = 'horizontal',
-    onExit
+    onExit,
+    preserveOnSelect = false
   } = config;
 
   if (orientation === 'horizontal') {
-    return showBooleanMenuHorizontal(question, defaultValue, yesText, noText, onExit);
+    return showBooleanMenuHorizontal(question, defaultValue, yesText, noText, onExit, preserveOnSelect);
   } else {
-    return showBooleanMenuVertical(question, defaultValue, yesText, noText, onExit);
+    return showBooleanMenuVertical(question, defaultValue, yesText, noText, onExit, preserveOnSelect);
   }
 }
 
@@ -38,7 +39,8 @@ async function showBooleanMenuHorizontal(
   defaultValue: boolean,
   yesText: string,
   noText: string,
-  onExit?: () => void
+  onExit?: () => void,
+  preserveOnSelect = false
 ): Promise<boolean> {
   const state = initTerminal();
   let selected = defaultValue;
@@ -82,7 +84,9 @@ async function showBooleanMenuHorizontal(
       // Handle Enter
       if (isEnter(key)) {
         state.stdin.removeListener('data', onData);
-        clearMenu(state);
+        if (!preserveOnSelect) {
+          clearMenu(state);
+        }
         restoreTerminal(state);
         resolve(selected);
         return;
@@ -128,7 +132,8 @@ async function showBooleanMenuVertical(
   defaultValue: boolean,
   yesText: string,
   noText: string,
-  onExit?: () => void
+  onExit?: () => void,
+  preserveOnSelect = false
 ): Promise<boolean> {
   const state = initTerminal();
   let selected = defaultValue;
@@ -175,7 +180,9 @@ async function showBooleanMenuVertical(
       // Handle Enter
       if (isEnter(key)) {
         state.stdin.removeListener('data', onData);
-        clearMenu(state);
+        if (!preserveOnSelect) {
+          clearMenu(state);
+        }
         restoreTerminal(state);
         resolve(selected);
         return;

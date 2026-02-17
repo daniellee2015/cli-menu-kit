@@ -46,7 +46,8 @@ export async function showRadioMenu(config: RadioMenuConfig): Promise<RadioMenuR
     allowNumberKeys = true,
     allowLetterKeys = false,
     separatorWidth = 30,
-    onExit
+    onExit,
+    preserveOnSelect = false
   } = config;
 
   // Use i18n for default prompt if not provided
@@ -221,7 +222,11 @@ export async function showRadioMenu(config: RadioMenuConfig): Promise<RadioMenuR
       // Handle Enter
       if (isEnter(key)) {
         state.stdin.removeListener('data', onData);
-        clearMenu(state);
+        if (!preserveOnSelect) {
+          clearMenu(state);
+        } else {
+          writeLine('');
+        }
         restoreTerminal(state);
 
         const selectedOption = options[selectedIndex];

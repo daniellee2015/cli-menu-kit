@@ -48,7 +48,8 @@ export async function showCheckboxMenu(config: CheckboxMenuConfig): Promise<Chec
     allowSelectAll = true,
     allowInvert = true,
     separatorWidth = 30,
-    onExit
+    onExit,
+    preserveOnSelect = false
   } = config;
 
   // Use i18n for default prompt if not provided
@@ -194,7 +195,9 @@ export async function showCheckboxMenu(config: CheckboxMenuConfig): Promise<Chec
         }
 
         state.stdin.removeListener('data', onData);
-        clearMenu(state);
+        if (!preserveOnSelect) {
+          clearMenu(state);
+        }
         restoreTerminal(state);
 
         const indices = Array.from(selected).sort((a, b) => a - b);

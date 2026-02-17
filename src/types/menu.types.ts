@@ -36,6 +36,9 @@ export interface BaseMenuConfig {
 
   /** Separator width for section labels (default: 30) */
   separatorWidth?: number;
+
+  /** Keep menu rendered after selection instead of clearing (default: false) */
+  preserveOnSelect?: boolean;
 }
 
 /**
