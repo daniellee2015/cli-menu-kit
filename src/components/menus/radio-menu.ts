@@ -7,15 +7,17 @@ import { RadioMenuConfig, RadioMenuResult, MenuOption } from '../../types/menu.t
 import { initTerminal, restoreTerminal, clearMenu, TerminalState, writeLine } from '../../core/terminal.js';
 import { KEY_CODES, isEnter, isCtrlC, isNumberKey, isLetterKey, normalizeLetter } from '../../core/keyboard.js';
 import { renderHeader, renderOption, renderInputPrompt, renderBlankLines, renderSectionLabel } from '../../core/renderer.js';
+import { renderHints } from '../../core/renderer.js';
 import { colors, uiColors } from '../../core/colors.js';
 import { t } from '../../i18n/registry.js';
 
 /**
  * Show a radio menu (single-select)
  * @param config - Menu configuration
+ * @param hints - Optional hints to display at the bottom (for Page Layout use)
  * @returns Promise resolving to selected option
  */
-export async function showRadioMenu(config: RadioMenuConfig): Promise<RadioMenuResult> {
+export async function showRadioMenu(config: RadioMenuConfig, hints?: string[]): Promise<RadioMenuResult> {
   const {
     options,
     title,
@@ -145,6 +147,14 @@ export async function showRadioMenu(config: RadioMenuConfig): Promise<RadioMenuR
 
     renderInputPrompt(displayPrompt, displayValue);
     lineCount++;
+
+    // Render hints if provided (for Page Layout footer)
+    if (hints && hints.length > 0) {
+      renderBlankLines(1);
+      lineCount++;
+      renderHints(hints);
+      lineCount++;
+    }
 
     state.renderedLines = lineCount;
   };

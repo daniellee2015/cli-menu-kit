@@ -104,30 +104,25 @@ async function renderFooter(config?: FooterConfig): Promise<any> {
 
   // 1. Menu (if present)
   if (config.menu) {
-    // Render hints before menu interaction
-    if (config.hints && config.hints.length > 0) {
-      renderHintsComponent({ hints: config.hints });
-    }
-
     result = await menu.radio({
       options: config.menu.options,
       allowLetterKeys: config.menu.allowLetterKeys ?? true,
       allowNumberKeys: config.menu.allowNumberKeys ?? true,
       preserveOnSelect: true
-    });
+    }, config.hints); // Pass hints as second parameter
   }
   // 2. Input (if present)
   else if (config.input) {
-    // Render hints before input interaction
-    if (config.hints && config.hints.length > 0) {
-      renderHintsComponent({ hints: config.hints });
-    }
-
     result = await input.text({
       prompt: config.input.prompt,
       defaultValue: config.input.defaultValue,
       allowEmpty: config.input.allowEmpty ?? false
     });
+
+    // Render hints after input if provided
+    if (config.hints && config.hints.length > 0) {
+      renderHintsComponent({ hints: config.hints });
+    }
   }
 
   // 3. Ask (if present - usually after Menu or Input)

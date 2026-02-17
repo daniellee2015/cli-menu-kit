@@ -37,10 +37,11 @@ export const menuAPI = {
   /**
    * Show a radio menu (single-select)
    * @param config - Menu configuration
+   * @param hints - Optional hints for Page Layout footer
    * @returns Promise resolving to selected option
    */
-  radio: (config: RadioMenuConfig): Promise<RadioMenuResult> => {
-    return showRadioMenu(config);
+  radio: (config: RadioMenuConfig, hints?: string[]): Promise<RadioMenuResult> => {
+    return showRadioMenu(config, hints);
   },
 
   /**
