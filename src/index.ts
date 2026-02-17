@@ -56,7 +56,10 @@ export {
   createSummaryTable,
   createSimpleSummary,
   renderHeader,
-  type HeaderConfig
+  type HeaderConfig,
+  renderHintsComponent,
+  createHints,
+  type HintsConfig
 } from './components/display/index.js';
 
 // Export features

@@ -41,3 +41,9 @@ export {
   renderHeader,
   type HeaderConfig
 } from './header.js';
+
+export {
+  renderHintsComponent,
+  createHints,
+  type HintsConfig
+} from './hints.js';

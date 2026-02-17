@@ -5,7 +5,7 @@
 
 import { menuAPI as menu, inputAPI as input } from './api.js';
 import { renderSimpleHeader, renderSectionHeader } from './components/display/headers.js';
-import { renderHints } from './core/renderer.js';
+import { renderHintsComponent } from './components/display/hints.js';
 
 /**
  * Header configuration
@@ -85,7 +85,7 @@ async function renderFooter(config?: FooterConfig): Promise<any> {
   if (config.menu) {
     // Render hints before menu interaction
     if (config.hints && config.hints.length > 0) {
-      renderHints(config.hints);
+      renderHintsComponent({ hints: config.hints });
     }
 
     result = await menu.radio({
@@ -99,7 +99,7 @@ async function renderFooter(config?: FooterConfig): Promise<any> {
   else if (config.input) {
     // Render hints before input interaction
     if (config.hints && config.hints.length > 0) {
-      renderHints(config.hints);
+      renderHintsComponent({ hints: config.hints });
     }
 
     result = await input.text({
