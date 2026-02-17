@@ -12,17 +12,49 @@ import { colors, uiColors } from '../../core/colors.js';
 import { t } from '../../i18n/registry.js';
 
 /**
- * Generate hints based on menu configuration
+ * Generate hints based on menu configuration and actual options
  */
-function generateHints(allowNumberKeys: boolean, allowLetterKeys: boolean): string[] {
-  const hints: string[] = [t('hints.arrows')];
+function generateHints(
+  options: MenuOption[],
+  allowNumberKeys: boolean,
+  allowLetterKeys: boolean
+): string[] {
+  const hints: string[] = [];
 
-  if (allowNumberKeys) {
-    hints.push(t('hints.numbers'));
+  // Count selectable options
+  const selectableCount = options.filter(opt =>
+    !(typeof opt === 'object' && 'type' in opt && opt.type === 'separator')
+  ).length;
+
+  // Only show arrow hints if there are multiple options
+  if (selectableCount > 1) {
+    hints.push(t('hints.arrows'));
   }
 
+  // Check if there are actually number-prefixed options
+  if (allowNumberKeys) {
+    const hasNumberOptions = options.some(opt => {
+      if (typeof opt === 'string') {
+        return /^\d+\./.test(opt);
+      }
+      return false;
+    });
+    if (hasNumberOptions) {
+      hints.push(t('hints.numbers'));
+    }
+  }
+
+  // Check if there are actually letter-prefixed options
   if (allowLetterKeys) {
-    hints.push(t('hints.letters'));
+    const hasLetterOptions = options.some(opt => {
+      if (typeof opt === 'string') {
+        return /^[a-zA-Z]\./.test(opt);
+      }
+      return false;
+    });
+    if (hasLetterOptions) {
+      hints.push(t('hints.letters'));
+    }
   }
 
   hints.push(t('hints.enter'));
@@ -54,7 +86,7 @@ export async function showRadioMenu(config: RadioMenuConfig): Promise<RadioMenuR
   const displayPrompt = prompt || t('menus.selectPrompt');
 
   // Generate hints dynamically if not provided
-  const displayHints = hints || generateHints(allowNumberKeys, allowLetterKeys);
+  const displayHints = hints || generateHints(options, allowNumberKeys, allowLetterKeys);
 
   // Validate options
   if (!options || options.length === 0) {
