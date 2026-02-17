@@ -10,7 +10,6 @@ import { KEY_CODES, isEnter, isCtrlC, isNumberKey, isLetterKey, normalizeLetter 
 import { renderHeader, renderOption, renderBlankLines, renderSectionLabel } from '../../core/renderer.js';
 import { colors, uiColors } from '../../core/colors.js';
 import { t } from '../../i18n/registry.js';
-import { screenManager } from '../../layout.js';
 
 /**
  * Menu state for split rendering
@@ -225,7 +224,7 @@ export async function waitForRadioMenuInput(menuState: RadioMenuState): Promise<
       // Handle Ctrl+C
       if (isCtrlC(key)) {
         state.stdin.removeListener('data', onData);
-        screenManager.clearRegion(menuState.regionId);
+        // screenManager.clearRegion(menuState.regionId);
         restoreTerminal(state);
         if (onExit) {
           onExit();
@@ -251,7 +250,7 @@ export async function waitForRadioMenuInput(menuState: RadioMenuState): Promise<
           state.stdin.removeListener('data', onData);
 
           if (!preserveOnSelect) {
-            screenManager.clearRegion(menuState.regionId);
+            // screenManager.clearRegion(menuState.regionId);
           }
 
           restoreTerminal(state);

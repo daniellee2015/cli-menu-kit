@@ -1,27 +1,43 @@
 /**
  * Input Prompt Component
- * Displays the current input prompt with selected value
+ * Factory function to create input prompt configuration
  */
-
-import { Component, Rect, hintManager } from '../../layout.js';
 
 export interface InputPromptConfig {
   /** Prompt text to display */
   prompt: string;
-  /** Region ID for screen management */
-  regionId: string;
+  /** Default value */
+  defaultValue?: string;
+  /** Allow empty input */
+  allowEmpty?: boolean;
 }
 
 /**
- * Create an input prompt component
+ * Create an input prompt component configuration
+ * Returns a configuration object that can be used in footer.input
+ *
+ * @example
+ * ```typescript
+ * const inputConfig = createInputPromptComponent({
+ *   prompt: '请输入名称',
+ *   defaultValue: '',
+ *   allowEmpty: false
+ * });
+ *
+ * await renderPage({
+ *   header: {...},
+ *   mainArea: {...},
+ *   footer: {
+ *     input: inputConfig,
+ *     hints: ['Enter 确认', 'Esc 取消']
+ *   }
+ * });
+ * ```
  */
-export function createInputPromptComponent(config: InputPromptConfig): Component {
+export function createInputPromptComponent(config: InputPromptConfig): InputPromptConfig {
   return {
-    type: 'prompt',
-    regionId: config.regionId,
-    render: (rect: Rect) => {
-      return [config.prompt];
-    },
-    config
+    prompt: config.prompt,
+    defaultValue: config.defaultValue,
+    allowEmpty: config.allowEmpty ?? false
   };
 }

@@ -168,13 +168,9 @@ export async function showRadioMenu(config: RadioMenuConfig, hints?: string[]): 
       // Handle Ctrl+C
       if (isCtrlC(key)) {
         state.stdin.removeListener('data', onData);
-        clearMenu(state);
         restoreTerminal(state);
-        if (onExit) {
-          onExit();
-        } else {
-          console.log('\n👋 再见!');
-        }
+        // Don't clear menu on Ctrl+C - just exit directly
+        console.log('\n');
         process.exit(0);
       }
 

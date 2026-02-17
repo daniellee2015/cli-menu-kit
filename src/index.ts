@@ -7,21 +7,16 @@
 export { menuAPI as menu, inputAPI as input, wizardAPI as wizard } from './api.js';
 export { default } from './api.js';
 
-// Export Page Layout (Component-Based)
+// Export Page Layout (Simple Configuration API)
 export {
-  renderPageV2,
-  createCustomComponent,
-  screenManager,
-  hintManager,
-  computeLayout,
-  type PageLayoutConfigV2,
-  type AreaConfig,
-  type Component,
-  type Layout,
-  type Rect
-} from './layout.js';
+  renderPage,
+  type PageLayoutConfig,
+  type HeaderConfig as PageHeaderConfig,
+  type MainAreaConfig,
+  type FooterConfig
+} from './page-layout.js';
 
-// Export Component Factories
+// Export Component Factories (Legacy - for backward compatibility)
 export {
   createFullHeaderComponent,
   createSimpleHeaderComponent,
@@ -33,11 +28,6 @@ export {
   createRadioMenuComponent,
   createInputPromptComponent
 } from './component-factories.js';
-
-// Export V2 Components (New Architecture)
-export { createFullHeaderComponentV2 } from './components/display/header-v2.js';
-export { createHintsComponentV2, createDynamicHintsComponent } from './components/display/hints-v2.js';
-export { createRadioMenuComponentV2 } from './components/menus/radio-menu-v2.js';
 
 // Export menu components
 export {
