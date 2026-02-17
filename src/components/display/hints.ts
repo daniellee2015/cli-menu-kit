@@ -4,12 +4,79 @@
  */
 
 import { renderHints as renderHintsCore } from '../../core/renderer.js';
+import { t } from '../../i18n/registry.js';
 
 /**
  * Hints configuration
  */
 export interface HintsConfig {
   hints: string[];
+}
+
+/**
+ * Standard hint types
+ */
+export const HintTypes = {
+  /** Arrow keys navigation */
+  ARROWS: () => t('hints.arrows'),
+  /** Number keys selection */
+  NUMBERS: () => t('hints.numbers'),
+  /** Letter keys selection */
+  LETTERS: () => t('hints.letters'),
+  /** Space key toggle */
+  SPACE: () => t('hints.space'),
+  /** Enter key confirm */
+  ENTER: () => t('hints.enter'),
+  /** Escape key cancel */
+  ESC: () => 'Esc Cancel',
+  /** Select all */
+  SELECT_ALL: () => t('hints.selectAll'),
+  /** Invert selection */
+  INVERT: () => t('hints.invert')
+} as const;
+
+/**
+ * Generate hints for menu interactions
+ */
+export function generateMenuHints(options: {
+  hasMultipleOptions?: boolean;
+  allowNumberKeys?: boolean;
+  allowLetterKeys?: boolean;
+  allowSelectAll?: boolean;
+  allowInvert?: boolean;
+}): string[] {
+  const hints: string[] = [];
+
+  if (options.hasMultipleOptions) {
+    hints.push(HintTypes.ARROWS());
+  }
+
+  if (options.allowNumberKeys) {
+    hints.push(HintTypes.NUMBERS());
+  }
+
+  if (options.allowLetterKeys) {
+    hints.push(HintTypes.LETTERS());
+  }
+
+  if (options.allowSelectAll) {
+    hints.push(HintTypes.SELECT_ALL());
+  }
+
+  if (options.allowInvert) {
+    hints.push(HintTypes.INVERT());
+  }
+
+  hints.push(HintTypes.ENTER());
+
+  return hints;
+}
+
+/**
+ * Generate hints for input interactions
+ */
+export function generateInputHints(): string[] {
+  return [HintTypes.ENTER(), HintTypes.ESC()];
 }
 
 /**

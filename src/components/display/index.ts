@@ -45,5 +45,24 @@ export {
 export {
   renderHintsComponent,
   createHints,
+  generateMenuHints,
+  generateInputHints,
+  HintTypes,
   type HintsConfig
 } from './hints.js';
+
+export {
+  renderTable,
+  createTable,
+  type TableConfig,
+  type TableColumn
+} from './table.js';
+
+export {
+  renderList,
+  createList,
+  createBulletList,
+  createNumberedList,
+  type ListConfig,
+  type ListItem
+} from './list.js';

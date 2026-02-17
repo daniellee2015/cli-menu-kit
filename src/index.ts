@@ -59,7 +59,20 @@ export {
   type HeaderConfig,
   renderHintsComponent,
   createHints,
-  type HintsConfig
+  generateMenuHints,
+  generateInputHints,
+  HintTypes,
+  type HintsConfig,
+  renderTable,
+  createTable,
+  type TableConfig,
+  type TableColumn,
+  renderList,
+  createList,
+  createBulletList,
+  createNumberedList,
+  type ListConfig,
+  type ListItem
 } from './components/display/index.js';
 
 // Export features
