@@ -154,7 +154,12 @@ export interface CheckboxTableMenuConfig extends BaseMenuConfig {
     beforeIndex: number;
     /** Separator label */
     label: string;
+    /** Optional description shown below the separator */
+    description?: string;
   }>;
+
+  /** Separator label and description alignment (default: 'center') */
+  separatorAlign?: 'left' | 'center' | 'right';
 
   /** Column width calculation mode */
   widthMode?: 'auto' | 'fixed';

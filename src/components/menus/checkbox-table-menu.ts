@@ -43,9 +43,9 @@ function calculateColumnWidths(
  */
 function buildOptionsWithSeparators(
   data: Record<string, any>[],
-  separators?: Array<{ beforeIndex: number; label: string }>
-): Array<{ type: 'data' | 'separator'; data?: any; label?: string; originalIndex?: number }> {
-  const result: Array<{ type: 'data' | 'separator'; data?: any; label?: string; originalIndex?: number }> = [];
+  separators?: Array<{ beforeIndex: number; label: string; description?: string }>
+): Array<{ type: 'data' | 'separator'; data?: any; label?: string; description?: string; originalIndex?: number }> {
+  const result: Array<{ type: 'data' | 'separator'; data?: any; label?: string; description?: string; originalIndex?: number }> = [];
   const sortedSeparators = (separators || []).sort((a, b) => a.beforeIndex - b.beforeIndex);
 
   let sepIndex = 0;
@@ -54,7 +54,8 @@ function buildOptionsWithSeparators(
     while (sepIndex < sortedSeparators.length && sortedSeparators[sepIndex].beforeIndex === i) {
       result.push({
         type: 'separator',
-        label: sortedSeparators[sepIndex].label
+        label: sortedSeparators[sepIndex].label,
+        description: sortedSeparators[sepIndex].description
       });
       sepIndex++;
     }
@@ -179,6 +180,7 @@ export async function showCheckboxTableMenu(
     showBorders = false,
     showHeaderSeparator = true,
     separators,
+    separatorAlign = 'center',
     widthMode = 'fixed',
     checkboxWidth = 4,
     title,
@@ -219,7 +221,7 @@ export async function showCheckboxTableMenu(
     }
   });
 
-  const state = initTerminal(true); // Use alternate screen buffer with improved clear logic
+  const state = initTerminal(); // Use normal mode (inline rendering)
 
   // Get selectable indices (skip separators)
   const selectableIndices: number[] = [];
@@ -254,20 +256,11 @@ export async function showCheckboxTableMenu(
 
   // Render function with virtual scrolling
   const render = () => {
-    // In alternate screen buffer, use simpler clear method
-    if (state.useAltScreen) {
-      // Move to top-left and clear to bottom
-      process.stdout.write('\x1b[H\x1b[J');
-    } else {
+    // Clear previous render
+    if (state.renderedLines > 0) {
       clearMenu(state);
     }
     let lineCount = 0;
-
-    // Calculate available height for content
-    const terminalHeight = process.stdout.rows || 24;
-    const headerLines = 4; // title + prompt + table header + separator
-    const footerLines = hints && hints.length > 0 ? 2 : 0;
-    const availableLines = terminalHeight - headerLines - footerLines - 2; // -2 for safety margin
 
     // Render title if provided
     if (title) {
@@ -286,30 +279,105 @@ export async function showCheckboxTableMenu(
     // Render table header
     lineCount += renderTableHeader(columns, columnWidths, checkboxWidth, showHeaderSeparator);
 
-    // Virtual scrolling: calculate visible range
+    // Virtual scrolling: calculate visible range with stable height
+    const TARGET_LINES = 30; // Target line count for stable height
     const totalItems = optionsWithSeparators.length;
-    let startIndex = 0;
-    let endIndex = totalItems;
 
-    if (state.useAltScreen && totalItems > availableLines) {
-      // Center the cursor in the visible window
-      const halfWindow = Math.floor(availableLines / 2);
-      startIndex = Math.max(0, cursorIndex - halfWindow);
-      endIndex = Math.min(totalItems, startIndex + availableLines);
+    let visibleStart = 0;
+    let visibleEnd = totalItems;
 
-      // Adjust if we're near the end
-      if (endIndex === totalItems) {
-        startIndex = Math.max(0, totalItems - availableLines);
+    // Calculate line count for each item (consistent count for window calculation)
+    const getItemLineCount = (index: number): number => {
+      const item = optionsWithSeparators[index];
+      if (item.type === 'separator') {
+        let lines = 1; // title line
+        if (index > 0) lines++; // blank line before (except very first item)
+        if (item.description) lines++; // description line
+        return lines;
+      }
+      return 1; // data row
+    };
+
+    // Only apply virtual scrolling if content would exceed reasonable height
+    const estimatedTotalLines = optionsWithSeparators.reduce((sum, item, idx) => {
+      return sum + getItemLineCount(idx);
+    }, 0);
+
+    if (estimatedTotalLines > TARGET_LINES) {
+      // Line-based window: maintain constant line count
+      let currentLines = getItemLineCount(cursorIndex);
+      visibleStart = cursorIndex;
+      visibleEnd = cursorIndex + 1;
+
+      // Expand downward first (until we reach target or end)
+      while (visibleEnd < totalItems && currentLines < TARGET_LINES) {
+        const nextLines = getItemLineCount(visibleEnd);
+        if (currentLines + nextLines <= TARGET_LINES) {
+          currentLines += nextLines;
+          visibleEnd++;
+        } else {
+          break;
+        }
+      }
+
+      // Then expand upward (fill remaining space)
+      while (visibleStart > 0 && currentLines < TARGET_LINES) {
+        const prevLines = getItemLineCount(visibleStart - 1);
+        if (currentLines + prevLines <= TARGET_LINES) {
+          visibleStart--;
+          currentLines += prevLines;
+        } else {
+          break;
+        }
+      }
+
+      // If we still have space and can't expand upward, try expanding downward more
+      while (visibleEnd < totalItems && currentLines < TARGET_LINES) {
+        const nextLines = getItemLineCount(visibleEnd);
+        if (currentLines + nextLines <= TARGET_LINES) {
+          currentLines += nextLines;
+          visibleEnd++;
+        } else {
+          break;
+        }
       }
     }
 
     // Render visible options
-    for (let index = startIndex; index < endIndex; index++) {
+    for (let index = visibleStart; index < visibleEnd; index++) {
       const item = optionsWithSeparators[index];
+
       if (item.type === 'separator') {
-        // Render separator
-        renderSectionLabel(item.label || '', totalTableWidth);
+        // Add blank line before separator (except for the first visible one)
+        if (index > visibleStart) {
+          renderBlankLines(1);
+          lineCount++;
+        }
+        // Render separator with configured alignment
+        renderSectionLabel(item.label || '', totalTableWidth, separatorAlign);
         lineCount++;
+        // Render description if provided (with same alignment)
+        if (item.description) {
+          const descLength = item.description.length;
+          let padding = 0;
+
+          switch (separatorAlign) {
+            case 'left':
+              padding = 2; // Just left margin
+              break;
+            case 'right':
+              padding = Math.max(0, totalTableWidth - descLength);
+              break;
+            case 'center':
+            default:
+              padding = Math.max(0, Math.floor((totalTableWidth - descLength) / 2)) + 2;
+              break;
+          }
+
+          const alignedDesc = ' '.repeat(padding) + item.description;
+          process.stdout.write(`${colors.dim}${alignedDesc}${colors.reset}\n`);
+          lineCount++;
+        }
       } else {
         // Render data row
         const originalIndex = item.originalIndex!;
@@ -321,8 +389,15 @@ export async function showCheckboxTableMenu(
     }
 
     // Show scroll indicator if content is truncated
-    if (state.useAltScreen && totalItems > availableLines) {
-      const scrollInfo = `  ${colors.dim}(${startIndex + 1}-${endIndex} of ${totalItems})${colors.reset}`;
+    if (visibleStart > 0 || visibleEnd < totalItems) {
+      renderBlankLines(1);
+      lineCount++;
+
+      // Calculate current position among selectable items
+      const selectableBeforeCursor = selectableIndices.filter(i => i <= cursorIndex).length;
+      const totalSelectable = selectableIndices.length;
+
+      const scrollInfo = `  ${colors.dim}[第 ${selectableBeforeCursor}/${totalSelectable} 项 | ↑↓ 滚动查看更多]${colors.reset}`;
       process.stdout.write(scrollInfo + '\n');
       lineCount++;
     }

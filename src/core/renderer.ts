@@ -145,18 +145,36 @@ export function renderSeparator(char: string = '─', width?: number): void {
  * Render a section label (menu grouping)
  * @param label - Label text (optional)
  * @param width - Total width of the separator (default: 30)
+ * @param align - Alignment of the label (default: 'center')
  */
-export function renderSectionLabel(label?: string, width: number = 30): void {
+export function renderSectionLabel(label?: string, width: number = 30, align: 'left' | 'center' | 'right' = 'center'): void {
   if (label) {
-    const totalWidth = width; // Use configured width
-    const padding = 2; // Spaces around label
+    const totalWidth = width;
     const labelWithPadding = ` ${label} `;
     const labelLength = labelWithPadding.length;
     const dashesTotal = totalWidth - labelLength;
-    const dashesLeft = Math.floor(dashesTotal / 2);
-    const dashesRight = dashesTotal - dashesLeft;
 
-    const line = `  ${uiColors.separator}${'─'.repeat(dashesLeft)}${labelWithPadding}${'─'.repeat(dashesRight)}${colors.reset}`;
+    let dashesLeft: number;
+    let dashesRight: number;
+
+    switch (align) {
+      case 'left':
+        dashesLeft = 0;
+        dashesRight = dashesTotal;
+        break;
+      case 'right':
+        dashesLeft = dashesTotal;
+        dashesRight = 0;
+        break;
+      case 'center':
+      default:
+        dashesLeft = Math.floor(dashesTotal / 2);
+        dashesRight = dashesTotal - dashesLeft;
+        break;
+    }
+
+    // Use primary color (cyan) and bold for phase labels
+    const line = `  ${colors.cyan}${colors.bold}${'─'.repeat(dashesLeft)}${labelWithPadding}${'─'.repeat(dashesRight)}${colors.reset}`;
     writeLine(line);
   } else {
     writeLine('');
