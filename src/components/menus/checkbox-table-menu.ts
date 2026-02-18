@@ -9,6 +9,7 @@ import { KEY_CODES, isEnter, isCtrlC, isSpace } from '../../core/keyboard.js';
 import { renderBlankLines, renderSectionLabel, renderHints, padText } from '../../core/renderer.js';
 import { colors } from '../../core/colors.js';
 import { t } from '../../i18n/registry.js';
+import { calculateVirtualScroll } from '../../core/virtual-scroll.js';
 
 /**
  * Calculate column widths based on content
@@ -279,69 +280,23 @@ export async function showCheckboxTableMenu(
     // Render table header
     lineCount += renderTableHeader(columns, columnWidths, checkboxWidth, showHeaderSeparator);
 
-    // Virtual scrolling: calculate visible range with stable height
-    const TARGET_LINES = 30; // Target line count for stable height
-    const totalItems = optionsWithSeparators.length;
-
-    let visibleStart = 0;
-    let visibleEnd = totalItems;
-
-    // Calculate line count for each item (consistent count for window calculation)
-    const getItemLineCount = (index: number): number => {
-      const item = optionsWithSeparators[index];
-      if (item.type === 'separator') {
-        let lines = 1; // title line
-        if (index > 0) lines++; // blank line before (except very first item)
-        if (item.description) lines++; // description line
-        return lines;
-      }
-      return 1; // data row
-    };
-
-    // Only apply virtual scrolling if content would exceed reasonable height
-    const estimatedTotalLines = optionsWithSeparators.reduce((sum, item, idx) => {
-      return sum + getItemLineCount(idx);
-    }, 0);
-
-    if (estimatedTotalLines > TARGET_LINES) {
-      // Line-based window: maintain constant line count
-      let currentLines = getItemLineCount(cursorIndex);
-      visibleStart = cursorIndex;
-      visibleEnd = cursorIndex + 1;
-
-      // Expand downward first (until we reach target or end)
-      while (visibleEnd < totalItems && currentLines < TARGET_LINES) {
-        const nextLines = getItemLineCount(visibleEnd);
-        if (currentLines + nextLines <= TARGET_LINES) {
-          currentLines += nextLines;
-          visibleEnd++;
-        } else {
-          break;
+    // Virtual scrolling: calculate visible range using utility
+    const scrollResult = calculateVirtualScroll({
+      items: optionsWithSeparators,
+      cursorIndex,
+      targetLines: 30,
+      getItemLineCount: (item, index) => {
+        if (item.type === 'separator') {
+          let lines = 1; // title line
+          if (index > 0) lines++; // blank line before (except very first item)
+          if (item.description) lines++; // description line
+          return lines;
         }
+        return 1; // data row
       }
+    });
 
-      // Then expand upward (fill remaining space)
-      while (visibleStart > 0 && currentLines < TARGET_LINES) {
-        const prevLines = getItemLineCount(visibleStart - 1);
-        if (currentLines + prevLines <= TARGET_LINES) {
-          visibleStart--;
-          currentLines += prevLines;
-        } else {
-          break;
-        }
-      }
-
-      // If we still have space and can't expand upward, try expanding downward more
-      while (visibleEnd < totalItems && currentLines < TARGET_LINES) {
-        const nextLines = getItemLineCount(visibleEnd);
-        if (currentLines + nextLines <= TARGET_LINES) {
-          currentLines += nextLines;
-          visibleEnd++;
-        } else {
-          break;
-        }
-      }
-    }
+    const { visibleStart, visibleEnd, isScrolled } = scrollResult;
 
     // Render visible options
     for (let index = visibleStart; index < visibleEnd; index++) {
@@ -388,8 +343,8 @@ export async function showCheckboxTableMenu(
       }
     }
 
-    // Show scroll indicator if content is truncated
-    if (visibleStart > 0 || visibleEnd < totalItems) {
+    // Show scroll indicator if content is scrolled
+    if (isScrolled) {
       renderBlankLines(1);
       lineCount++;
 

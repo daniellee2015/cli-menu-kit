@@ -6,16 +6,17 @@
 import { CheckboxMenuConfig, CheckboxMenuResult, MenuOption } from '../../types/menu.types.js';
 import { initTerminal, restoreTerminal, clearMenu, TerminalState } from '../../core/terminal.js';
 import { KEY_CODES, isEnter, isCtrlC, isSpace, normalizeLetter } from '../../core/keyboard.js';
-import { renderOption, renderInputPrompt, renderBlankLines, renderSectionLabel } from '../../core/renderer.js';
+import { renderOption, renderInputPrompt, renderBlankLines, renderSectionLabel, renderHints } from '../../core/renderer.js';
 import { colors } from '../../core/colors.js';
 import { t } from '../../i18n/registry.js';
 
 /**
  * Show a checkbox menu (multi-select)
  * @param config - Menu configuration
+ * @param hints - Optional hints to display at the bottom (for Page Layout use)
  * @returns Promise resolving to selected options
  */
-export async function showCheckboxMenu(config: CheckboxMenuConfig): Promise<CheckboxMenuResult> {
+export async function showCheckboxMenu(config: CheckboxMenuConfig, hints?: string[]): Promise<CheckboxMenuResult> {
   const {
     options,
     title,
@@ -117,6 +118,14 @@ export async function showCheckboxMenu(config: CheckboxMenuConfig): Promise<Chec
       }
       lineCount++;
     });
+
+    // Render hints if provided
+    if (hints && hints.length > 0) {
+      renderBlankLines(1);
+      lineCount++;
+      renderHints(hints);
+      lineCount += 1;
+    }
 
     state.renderedLines = lineCount;
   };

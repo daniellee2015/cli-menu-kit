@@ -21,6 +21,16 @@ export interface TerminalState {
 export function initTerminal(useAltScreen: boolean = false): TerminalState {
   const stdin = process.stdin;
 
+  // Disable all mouse tracking modes BEFORE enabling raw mode
+  process.stdout.write('\x1b[?1000l'); // Disable normal mouse tracking
+  process.stdout.write('\x1b[?1001l'); // Disable highlight mouse tracking
+  process.stdout.write('\x1b[?1002l'); // Disable button event tracking
+  process.stdout.write('\x1b[?1003l'); // Disable any event tracking
+  process.stdout.write('\x1b[?1004l'); // Disable focus events
+  process.stdout.write('\x1b[?1005l'); // Disable UTF-8 mouse mode
+  process.stdout.write('\x1b[?1006l'); // Disable SGR extended mouse mode
+  process.stdout.write('\x1b[?1015l'); // Disable urxvt mouse mode
+
   // Enable raw mode for character-by-character input
   stdin.setRawMode(true);
   stdin.resume();

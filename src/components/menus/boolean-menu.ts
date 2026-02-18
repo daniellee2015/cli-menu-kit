@@ -7,6 +7,7 @@ import { BooleanMenuConfig, BooleanMenuResult } from '../../types/menu.types.js'
 import { initTerminal, restoreTerminal, clearMenu, TerminalState, writeLine } from '../../core/terminal.js';
 import { KEY_CODES, isEnter, isCtrlC, normalizeLetter } from '../../core/keyboard.js';
 import { colors } from '../../core/colors.js';
+import { t } from '../../i18n/registry.js';
 
 /**
  * Show a boolean menu (yes/no selection)
@@ -17,8 +18,8 @@ export async function showBooleanMenu(config: BooleanMenuConfig): Promise<Boolea
   const {
     question,
     defaultValue = true,
-    yesText = '是',
-    noText = '否',
+    yesText = t('menus.yes'),
+    noText = t('menus.no'),
     orientation = 'horizontal',
     onExit,
     preserveOnSelect = false

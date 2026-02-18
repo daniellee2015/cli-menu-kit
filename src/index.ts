@@ -174,6 +174,11 @@ export type {
 
 // Export core utilities (for advanced users)
 export { KEY_CODES } from './core/keyboard.js';
+export {
+  calculateVirtualScroll,
+  type VirtualScrollOptions,
+  type VirtualScrollResult
+} from './core/virtual-scroll.js';
 
 // Legacy exports (for backward compatibility)
 export * from './types';

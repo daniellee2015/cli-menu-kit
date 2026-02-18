@@ -9,7 +9,9 @@ export const en: LanguageMap = {
     selectPrompt: 'Enter option or use ↑↓ to select, press Enter to confirm',
     multiSelectPrompt: 'Space to toggle, Enter to confirm',
     confirmPrompt: 'Press Enter to confirm',
-    selectedCount: 'selected'
+    selectedCount: 'selected',
+    yes: 'Yes',
+    no: 'No'
   },
   hints: {
     arrows: '↑↓ Arrow keys',
