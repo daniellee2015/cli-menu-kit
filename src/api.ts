@@ -5,6 +5,7 @@
 
 import { showRadioMenu } from './components/menus/radio-menu.js';
 import { showCheckboxMenu } from './components/menus/checkbox-menu.js';
+import { showCheckboxTableMenu } from './components/menus/checkbox-table-menu.js';
 import { showBooleanMenu } from './components/menus/boolean-menu.js';
 import { showTextInput } from './components/inputs/text-input.js';
 import { showNumberInput } from './components/inputs/number-input.js';
@@ -14,9 +15,11 @@ import { runWizard, WizardConfig, WizardResult } from './features/wizard.js';
 import {
   RadioMenuConfig,
   CheckboxMenuConfig,
+  CheckboxTableMenuConfig,
   BooleanMenuConfig,
   RadioMenuResult,
   CheckboxMenuResult,
+  CheckboxTableMenuResult,
   BooleanMenuResult
 } from './types/menu.types.js';
 import {
@@ -47,10 +50,21 @@ export const menuAPI = {
   /**
    * Show a checkbox menu (multi-select)
    * @param config - Menu configuration
+   * @param hints - Optional hints for Page Layout footer
    * @returns Promise resolving to selected options
    */
-  checkbox: (config: CheckboxMenuConfig): Promise<CheckboxMenuResult> => {
-    return showCheckboxMenu(config);
+  checkbox: (config: CheckboxMenuConfig, hints?: string[]): Promise<CheckboxMenuResult> => {
+    return showCheckboxMenu(config, hints);
+  },
+
+  /**
+   * Show a checkbox table menu (multi-select with table display)
+   * @param config - Menu configuration
+   * @param hints - Optional hints for Page Layout footer
+   * @returns Promise resolving to selected rows
+   */
+  checkboxTable: (config: CheckboxTableMenuConfig, hints?: string[]): Promise<CheckboxTableMenuResult> => {
+    return showCheckboxTableMenu(config, hints);
   },
 
   /**

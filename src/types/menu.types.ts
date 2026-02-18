@@ -107,3 +107,72 @@ export interface CheckboxMenuResult {
 }
 
 export type BooleanMenuResult = boolean;
+
+/**
+ * Checkbox table menu configuration
+ * Combines checkbox selection with table display
+ */
+export interface CheckboxTableMenuConfig extends BaseMenuConfig {
+  /** Table columns definition */
+  columns: Array<{
+    header: string;
+    key: string;
+    width?: number;
+    align?: 'left' | 'center' | 'right';
+  }>;
+
+  /** Data rows (each row is an object with column keys) */
+  data: Record<string, any>[];
+
+  /** Optional: Key to use as unique identifier (default: index) */
+  idKey?: string;
+
+  /** Default selected row indices or IDs */
+  defaultSelected?: (number | string)[];
+
+  /** Minimum selections required */
+  minSelections?: number;
+
+  /** Maximum selections allowed */
+  maxSelections?: number;
+
+  /** Allow select all */
+  allowSelectAll?: boolean;
+
+  /** Allow invert selection */
+  allowInvert?: boolean;
+
+  /** Show table borders (default: false for checkbox menu style) */
+  showBorders?: boolean;
+
+  /** Show header separator (default: true) */
+  showHeaderSeparator?: boolean;
+
+  /** Phase/group separators (for grouping rows) */
+  separators?: Array<{
+    /** Insert before this row index */
+    beforeIndex: number;
+    /** Separator label */
+    label: string;
+  }>;
+
+  /** Column width calculation mode */
+  widthMode?: 'auto' | 'fixed';
+
+  /** Checkbox column width (default: 4) */
+  checkboxWidth?: number;
+}
+
+/**
+ * Checkbox table menu result
+ */
+export interface CheckboxTableMenuResult {
+  /** Selected row indices */
+  indices: number[];
+
+  /** Selected row data objects */
+  rows: Record<string, any>[];
+
+  /** Selected IDs (if idKey is provided) */
+  ids?: (string | number)[];
+}

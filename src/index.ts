@@ -33,6 +33,7 @@ export {
 export {
   showRadioMenu,
   showCheckboxMenu,
+  showCheckboxTableMenu,
   showBooleanMenu
 } from './components/menus/index.js';
 

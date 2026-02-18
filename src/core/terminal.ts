@@ -10,13 +10,15 @@ export interface TerminalState {
   stdin: NodeJS.ReadStream;
   renderedLines: number;
   isRawMode: boolean;
+  useAltScreen: boolean;
 }
 
 /**
  * Initialize terminal for interactive mode
+ * @param useAltScreen - Whether to use alternate screen buffer (prevents scroll issues)
  * @returns Terminal state object
  */
-export function initTerminal(): TerminalState {
+export function initTerminal(useAltScreen: boolean = false): TerminalState {
   const stdin = process.stdin;
 
   // Enable raw mode for character-by-character input
@@ -24,13 +26,20 @@ export function initTerminal(): TerminalState {
   stdin.resume();
   stdin.setEncoding('utf8');
 
+  // Use alternate screen buffer if requested
+  if (useAltScreen) {
+    process.stdout.write('\x1b[?1049h'); // Enable alternate screen
+    process.stdout.write('\x1b[H');      // Move cursor to home
+  }
+
   // Hide cursor
   process.stdout.write('\x1b[?25l');
 
   return {
     stdin,
     renderedLines: 0,
-    isRawMode: true
+    isRawMode: true,
+    useAltScreen
   };
 }
 
@@ -42,6 +51,11 @@ export function restoreTerminal(state: TerminalState): void {
   if (state.isRawMode) {
     state.stdin.setRawMode(false);
     state.isRawMode = false;
+  }
+
+  // Restore alternate screen if it was used
+  if (state.useAltScreen) {
+    process.stdout.write('\x1b[?1049l'); // Disable alternate screen
   }
 
   // Show cursor
@@ -69,9 +83,12 @@ export function clearMenu(state: TerminalState): void {
     }
 
     // Move cursor back to start position
-    // After loop, cursor is at line renderedLines
+    // After loop, cursor is at the last rendered line
     // To get back to line 1, move up (renderedLines - 1)
-    process.stdout.write(`\x1b[${state.renderedLines - 1}A`);
+    // Note: \x1b[0A defaults to 1 in ANSI spec, so skip when renderedLines === 1
+    if (state.renderedLines > 1) {
+      process.stdout.write(`\x1b[${state.renderedLines - 1}A`);
+    }
 
     state.renderedLines = 0;
   }
