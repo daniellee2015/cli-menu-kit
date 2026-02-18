@@ -18,6 +18,7 @@ export interface LanguageMap {
     selectedCount: string;
     yes: string;
     no: string;
+    scrollIndicator: string;
   };
   hints: {
     arrows: string;

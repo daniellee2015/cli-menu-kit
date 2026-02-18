@@ -352,7 +352,11 @@ export async function showCheckboxTableMenu(
       const selectableBeforeCursor = selectableIndices.filter(i => i <= cursorIndex).length;
       const totalSelectable = selectableIndices.length;
 
-      const scrollInfo = `  ${colors.dim}[第 ${selectableBeforeCursor}/${totalSelectable} 项 | ↑↓ 滚动查看更多]${colors.reset}`;
+      const scrollText = t('menus.scrollIndicator', {
+        current: String(selectableBeforeCursor),
+        total: String(totalSelectable)
+      });
+      const scrollInfo = `  ${colors.dim}[${scrollText}]${colors.reset}`;
       process.stdout.write(scrollInfo + '\n');
       lineCount++;
     }

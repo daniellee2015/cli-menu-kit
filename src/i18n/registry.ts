@@ -37,11 +37,12 @@ export function setLanguage(lang: LanguageCode): void {
 }
 
 /**
- * Get translation for a key path
+ * Get translation for a key path with optional parameter substitution
  * @param keyPath - Dot-separated key path (e.g., 'menus.selectPrompt')
- * @returns Translated string
+ * @param params - Optional parameters for string interpolation (e.g., { current: '1', total: '10' })
+ * @returns Translated string with parameters substituted
  */
-export function t(keyPath: string): string {
+export function t(keyPath: string, params?: Record<string, string>): string {
   const keys = keyPath.split('.');
   const langMap = registry.languages[registry.current];
 
@@ -55,7 +56,16 @@ export function t(keyPath: string): string {
     }
   }
 
-  return typeof value === 'string' ? value : keyPath;
+  let result = typeof value === 'string' ? value : keyPath;
+
+  // Substitute parameters if provided
+  if (params) {
+    for (const [key, val] of Object.entries(params)) {
+      result = result.replace(new RegExp(`\\{${key}\\}`, 'g'), val);
+    }
+  }
+
+  return result;
 }
 
 /**

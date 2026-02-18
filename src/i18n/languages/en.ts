@@ -11,7 +11,8 @@ export const en: LanguageMap = {
     confirmPrompt: 'Press Enter to confirm',
     selectedCount: 'selected',
     yes: 'Yes',
-    no: 'No'
+    no: 'No',
+    scrollIndicator: 'Item {current}/{total} | ↑↓ Scroll for more'
   },
   hints: {
     arrows: '↑↓ Arrow keys',

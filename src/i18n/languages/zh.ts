@@ -11,7 +11,8 @@ export const zh: LanguageMap = {
     confirmPrompt: '回车确认',
     selectedCount: '项已选',
     yes: '是',
-    no: '否'
+    no: '否',
+    scrollIndicator: '第 {current}/{total} 项 | ↑↓ 滚动查看更多'
   },
   hints: {
     arrows: '↑↓ 方向键',
