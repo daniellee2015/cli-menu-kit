@@ -88,6 +88,8 @@ function renderHeaderSection(config?: HeaderConfig): void {
   if (config.type === 'simple' && config.text) {
     renderSimpleHeader(config.text);
   } else if (config.type === 'section' && config.text) {
+    // Add extra blank line before section header for spacing between menus
+    console.log('');
     renderSectionHeader(config.text, config.width || 50);
   } else if (config.type === 'full') {
     // Render full header WITHOUT menuTitle
