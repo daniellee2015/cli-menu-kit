@@ -119,6 +119,31 @@ export {
   getCurrentLanguageMap
 } from './i18n/registry.js';
 
+// Export configuration system
+export {
+  initConfig,
+  getConfigManager,
+  loadConfig,
+  saveConfig,
+  getConfig,
+  setConfig,
+  resetConfig,
+  type UserConfig,
+  type ConfigOptions
+} from './config/user-config.js';
+
+export {
+  initLanguages,
+  loadLanguagesFromFile,
+  getLanguageManager,
+  getSupportedLanguages,
+  getLanguageConfig,
+  getDefaultLanguage,
+  getCLILanguageCode,
+  type LanguageConfig,
+  type LanguagesConfig
+} from './config/language-config.js';
+
 // Export color configuration
 export {
   colors,
