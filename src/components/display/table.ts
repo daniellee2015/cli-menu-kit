@@ -32,6 +32,8 @@ export interface TableConfig {
   showBorders?: boolean;
   /** Show header separator */
   showHeaderSeparator?: boolean;
+  /** Border color (ANSI escape code, e.g., '\x1b[2m' for dim/gray) */
+  borderColor?: string;
 }
 
 /**
@@ -39,11 +41,13 @@ export interface TableConfig {
  * @param config - Table configuration
  */
 export function renderTable(config: TableConfig): void {
-  const { columns, data, showBorders = true, showHeaderSeparator = true } = config;
+  const { columns, data, showBorders = true, showHeaderSeparator = true, borderColor = '' } = config;
 
   if (columns.length === 0 || data.length === 0) {
     return;
   }
+
+  const resetColor = borderColor ? '\x1b[0m' : '';
 
   // Calculate column widths
   const columnWidths = columns.map((col, index) => {
@@ -60,7 +64,7 @@ export function renderTable(config: TableConfig): void {
   // Render top border
   if (showBorders) {
     const border = columnWidths.map(w => '─'.repeat(w)).join('┬');
-    writeLine(`┌${border}┐`);
+    writeLine(`${borderColor}┌${border}┐${resetColor}`);
   }
 
   // Render header
@@ -71,7 +75,7 @@ export function renderTable(config: TableConfig): void {
   });
 
   if (showBorders) {
-    writeLine(`│${headerCells.join('│')}│`);
+    writeLine(`${borderColor}│${resetColor}${headerCells.join(`${borderColor}│${resetColor}`)}${borderColor}│${resetColor}`);
   } else {
     writeLine(headerCells.join(' '));
   }
@@ -80,7 +84,7 @@ export function renderTable(config: TableConfig): void {
   if (showHeaderSeparator) {
     if (showBorders) {
       const separator = columnWidths.map(w => '─'.repeat(w)).join('┼');
-      writeLine(`├${separator}┤`);
+      writeLine(`${borderColor}├${separator}┤${resetColor}`);
     } else {
       const separator = columnWidths.map(w => '─'.repeat(w)).join(' ');
       writeLine(separator);
@@ -97,7 +101,7 @@ export function renderTable(config: TableConfig): void {
     });
 
     if (showBorders) {
-      writeLine(`│${cells.join('│')}│`);
+      writeLine(`${borderColor}│${resetColor}${cells.join(`${borderColor}│${resetColor}`)}${borderColor}│${resetColor}`);
     } else {
       writeLine(cells.join(' '));
     }
@@ -106,7 +110,7 @@ export function renderTable(config: TableConfig): void {
   // Render bottom border
   if (showBorders) {
     const border = columnWidths.map(w => '─'.repeat(w)).join('┴');
-    writeLine(`└${border}┘`);
+    writeLine(`${borderColor}└${border}┘${resetColor}`);
   }
 }
 

@@ -112,8 +112,8 @@ export async function showRadioMenu(config: RadioMenuConfig, hints?: string[]): 
         // Don't add prefix if option already has number or letter prefix
         const prefix = (numberMatch || letterMatch) ? '' : `${selectableIndices.indexOf(index) + 1}. `;
 
-        // Check if this is an Exit option (contains "Exit" or "Quit")
-        const isExitOption = /\b(exit|quit)\b/i.test(item.value);
+        // Check if this is an Exit option (contains "Exit", "Quit", or Chinese "退出")
+        const isExitOption = /\b(exit|quit)\b|退出/i.test(item.value);
         const displayValue = isExitOption ? `${uiColors.error}${item.value}${colors.reset}` : item.value;
 
         // For radio menus, don't show selection indicator (pass undefined instead of false)

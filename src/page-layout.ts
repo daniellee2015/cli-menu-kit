@@ -216,6 +216,9 @@ export async function renderPage(config: PageLayoutConfig): Promise<any> {
       mainResult = await renderMainArea(config.mainArea, undefined);
     } else if (config.mainArea.render) {
       await config.mainArea.render();
+      // Add newline after custom render to separate from footer menu
+      // This ensures the escape codes from initTerminal don't interfere
+      console.log('');
     }
 
     // Render footer with hints
