@@ -4,12 +4,54 @@
  */
 
 import { RadioMenuConfig, RadioMenuResult, MenuOption } from '../../types/menu.types.js';
-import { initTerminal, restoreTerminal, clearMenu, TerminalState, writeLine } from '../../core/terminal.js';
+import {
+  initTerminal,
+  restoreTerminal,
+  clearMenu,
+  TerminalState,
+  writeLine,
+  countVisualLines
+} from '../../core/terminal.js';
 import { KEY_CODES, isEnter, isCtrlC, isNumberKey, isLetterKey, normalizeLetter } from '../../core/keyboard.js';
 import { renderHeader, renderOption, renderInputPrompt, renderBlankLines, renderSectionLabel } from '../../core/renderer.js';
 import { renderHints } from '../../core/renderer.js';
 import { colors, uiColors } from '../../core/colors.js';
 import { t } from '../../i18n/registry.js';
+
+function buildSectionLabelText(label: string | undefined, width: number): string {
+  if (!label) {
+    return '';
+  }
+
+  const labelWithPadding = ` ${label} `;
+  const dashesTotal = Math.max(0, width - labelWithPadding.length);
+  const dashesLeft = Math.floor(dashesTotal / 2);
+  const dashesRight = dashesTotal - dashesLeft;
+
+  return `  ${'─'.repeat(dashesLeft)}${labelWithPadding}${'─'.repeat(dashesRight)}`;
+}
+
+function buildOptionRenderText(
+  text: string,
+  isHighlighted: boolean,
+  prefix?: string
+): string {
+  const parts = text.split(' - ');
+  const mainText = parts[0] || '';
+  const description = parts.length > 1 ? parts.slice(1).join(' - ') : '';
+
+  let line = isHighlighted ? '❯ ' : '  ';
+  if (prefix) {
+    line += prefix;
+  }
+
+  line += mainText;
+  if (description) {
+    line += ` - ${description}`;
+  }
+
+  return line;
+}
 
 /**
  * Show a radio menu (single-select)
@@ -90,13 +132,16 @@ export async function showRadioMenu(config: RadioMenuConfig, hints?: string[]): 
   const render = () => {
     clearMenu(state);
     let lineCount = 0;
+    const addVisualLines = (text: string): void => {
+      lineCount += countVisualLines(text);
+    };
 
     // Render title if provided
     if (title) {
       renderHeader(`  ${title}`, colors.cyan);
-      lineCount++;
+      addVisualLines(`  ${title}`);
       renderBlankLines(1);
-      lineCount++;
+      addVisualLines('');
     }
 
     // Render options
@@ -104,6 +149,7 @@ export async function showRadioMenu(config: RadioMenuConfig, hints?: string[]): 
       if (item.isSeparator) {
         // Render section label with configured width
         renderSectionLabel(item.label, separatorWidth);
+        addVisualLines(buildSectionLabelText(item.label, separatorWidth));
       } else {
         // Check if option starts with a number or letter prefix
         const numberMatch = item.value.match(/^(\d+)\.\s*/);
@@ -118,20 +164,20 @@ export async function showRadioMenu(config: RadioMenuConfig, hints?: string[]): 
 
         // For radio menus, don't show selection indicator (pass undefined instead of false)
         renderOption(displayValue, undefined as any, index === selectedIndex, prefix);
+        addVisualLines(buildOptionRenderText(displayValue, index === selectedIndex, prefix));
 
         // Add blank line after last item before next separator
         const nextIndex = index + 1;
         if (nextIndex < optionData.length && optionData[nextIndex].isSeparator) {
           writeLine('');
-          lineCount++; // Count the blank line
+          addVisualLines('');
         }
       }
-      lineCount++;
     });
 
     // Render input prompt
     renderBlankLines(1);
-    lineCount++;
+    addVisualLines('');
 
     // Calculate display value (current selection number)
     let displayValue = '';
@@ -146,14 +192,14 @@ export async function showRadioMenu(config: RadioMenuConfig, hints?: string[]): 
     }
 
     renderInputPrompt(displayPrompt, displayValue);
-    lineCount++;
+    addVisualLines(`  ${displayPrompt} ${displayValue}`);
 
     // Render hints if provided (for Page Layout footer)
     if (hints && hints.length > 0) {
       renderBlankLines(1);
-      lineCount++;
+      addVisualLines('');
       renderHints(hints);
-      lineCount++;
+      addVisualLines(`  ${hints.join(' • ')}`);
     }
 
     state.renderedLines = lineCount;

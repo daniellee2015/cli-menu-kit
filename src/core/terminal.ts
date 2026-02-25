@@ -13,6 +13,112 @@ export interface TerminalState {
   useAltScreen: boolean;
 }
 
+const ANSI_ESCAPE_PATTERN =
+  /[\u001B\u009B][[\]()#;?]*(?:(?:[a-zA-Z\d]*(?:;[a-zA-Z\d]*)*)?\u0007|(?:\d{1,4}(?:;\d{0,4})*)?[\dA-PR-TZcf-nq-uy=><~])/g;
+const TAB_WIDTH = 4;
+
+/**
+ * Remove ANSI escape sequences from a string.
+ * This is required when calculating the visible width in terminal cells.
+ */
+export function stripAnsi(text: string): string {
+  return text.replace(ANSI_ESCAPE_PATTERN, '');
+}
+
+function isCombiningCodePoint(codePoint: number): boolean {
+  return (
+    (codePoint >= 0x0300 && codePoint <= 0x036F) || // Combining Diacritical Marks
+    (codePoint >= 0x1AB0 && codePoint <= 0x1AFF) || // Combining Diacritical Marks Extended
+    (codePoint >= 0x1DC0 && codePoint <= 0x1DFF) || // Combining Diacritical Marks Supplement
+    (codePoint >= 0x20D0 && codePoint <= 0x20FF) || // Combining Diacritical Marks for Symbols
+    (codePoint >= 0xFE20 && codePoint <= 0xFE2F) // Combining Half Marks
+  );
+}
+
+function isFullWidthCodePoint(codePoint: number): boolean {
+  if (codePoint < 0x1100) {
+    return false;
+  }
+
+  return (
+    codePoint <= 0x115F ||
+    codePoint === 0x2329 ||
+    codePoint === 0x232A ||
+    ((codePoint >= 0x2E80 && codePoint <= 0x3247) && codePoint !== 0x303F) ||
+    (codePoint >= 0x3250 && codePoint <= 0x4DBF) ||
+    (codePoint >= 0x4E00 && codePoint <= 0xA4C6) ||
+    (codePoint >= 0xA960 && codePoint <= 0xA97C) ||
+    (codePoint >= 0xAC00 && codePoint <= 0xD7A3) ||
+    (codePoint >= 0xF900 && codePoint <= 0xFAFF) ||
+    (codePoint >= 0xFE10 && codePoint <= 0xFE19) ||
+    (codePoint >= 0xFE30 && codePoint <= 0xFE6B) ||
+    (codePoint >= 0xFF01 && codePoint <= 0xFF60) ||
+    (codePoint >= 0xFFE0 && codePoint <= 0xFFE6) ||
+    (codePoint >= 0x1B000 && codePoint <= 0x1B001) ||
+    (codePoint >= 0x1F200 && codePoint <= 0x1F251) ||
+    (codePoint >= 0x20000 && codePoint <= 0x3FFFD)
+  );
+}
+
+function getCharacterWidth(char: string, currentLineWidth: number): number {
+  if (char === '\t') {
+    const remainder = currentLineWidth % TAB_WIDTH;
+    return remainder === 0 ? TAB_WIDTH : TAB_WIDTH - remainder;
+  }
+
+  const codePoint = char.codePointAt(0);
+  if (codePoint === undefined) {
+    return 0;
+  }
+
+  // Control characters and zero-width joiners/modifiers.
+  if (
+    codePoint <= 0x001F ||
+    (codePoint >= 0x007F && codePoint <= 0x009F) ||
+    codePoint === 0x200D ||
+    (codePoint >= 0xFE00 && codePoint <= 0xFE0F) ||
+    isCombiningCodePoint(codePoint)
+  ) {
+    return 0;
+  }
+
+  if (isFullWidthCodePoint(codePoint) || (codePoint >= 0x1F300 && codePoint <= 0x1FAFF)) {
+    return 2;
+  }
+
+  return 1;
+}
+
+/**
+ * Calculate the visible width of a string in terminal cells.
+ */
+export function getDisplayWidth(text: string): number {
+  const plain = stripAnsi(text);
+  let width = 0;
+
+  for (const char of plain) {
+    width += getCharacterWidth(char, width);
+  }
+
+  return width;
+}
+
+/**
+ * Count how many visual rows the text occupies after terminal wrapping.
+ */
+export function countVisualLines(text: string, terminalWidth: number = getTerminalWidth()): number {
+  const width = Math.max(1, terminalWidth);
+  const lines = text.split(/\r\n|\r|\n/);
+  let lineCount = 0;
+
+  for (const line of lines) {
+    const visualWidth = getDisplayWidth(line);
+    lineCount += Math.max(1, Math.ceil(visualWidth / width));
+  }
+
+  return lineCount;
+}
+
 /**
  * Initialize terminal for interactive mode
  * @param useAltScreen - Whether to use alternate screen buffer (prevents scroll issues)
