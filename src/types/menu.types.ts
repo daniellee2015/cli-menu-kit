@@ -31,6 +31,9 @@ export interface BaseMenuConfig {
 
   /** Keep menu rendered after selection instead of clearing (default: false) */
   preserveOnSelect?: boolean;
+
+  /** Keep current menu rendered on Ctrl+C exit instead of clearing (default: false) */
+  preserveOnExit?: boolean;
 }
 
 /**
@@ -79,6 +82,9 @@ export interface CheckboxMenuConfig extends BaseMenuConfig {
 export interface BooleanMenuConfig extends BaseMenuConfig {
   /** Question text */
   question: string;
+
+  /** Optional helper text rendered on the next line */
+  helperText?: string;
 
   /** Default value */
   defaultValue?: boolean;

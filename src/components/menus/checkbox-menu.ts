@@ -30,6 +30,7 @@ export async function showCheckboxMenu(config: CheckboxMenuConfig, hints?: strin
     onExit,
     preserveOnSelect = false
   } = config;
+  const preserveOnExit = config.preserveOnExit ?? preserveOnSelect;
 
   // Use i18n for default prompt if not provided
   const displayPrompt = prompt || t('menus.multiSelectPrompt');
@@ -139,12 +140,14 @@ export async function showCheckboxMenu(config: CheckboxMenuConfig, hints?: strin
       // Handle Ctrl+C
       if (isCtrlC(key)) {
         state.stdin.removeListener('data', onData);
-        clearMenu(state);
+        if (!preserveOnExit) {
+          clearMenu(state);
+        }
         restoreTerminal(state);
         if (onExit) {
           onExit();
         } else {
-          console.log('\n👋 再见!');
+          console.log(`\n${t('messages.goodbye')}`);
         }
         process.exit(0);
       }

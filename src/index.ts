@@ -59,6 +59,8 @@ export {
   createProgressIndicator,
   createStageHeader,
   createStageSeparator,
+  renderProgressCheckmark,
+  createProgressCheckmark,
   renderMessage,
   showSuccess,
   showError,

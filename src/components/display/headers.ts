@@ -16,9 +16,23 @@ import { getTerminalWidth } from '../../core/terminal.js';
  */
 export function renderSimpleHeader(text: string, color?: string): void {
   const headerColor = color || uiColors.primary;
-  const line = `=== ${text} ===`;
+  const line = `  === ${text} ===`;
   writeLine(`${headerColor}${line}${colors.reset}`);
   writeLine('');
+}
+
+export function renderSimpleHeaderWithSpacing(
+  text: string,
+  color?: string,
+  spacingAfter: number = 1
+): void {
+  const headerColor = color || uiColors.primary;
+  const line = `  === ${text} ===`;
+  writeLine(`${headerColor}${line}${colors.reset}`);
+  const spacerLines = Math.max(0, Math.floor(spacingAfter));
+  for (let i = 0; i < spacerLines; i += 1) {
+    writeLine('');
+  }
 }
 
 /**
@@ -59,26 +73,26 @@ export function renderAsciiHeader(config: AsciiHeaderConfig): void {
   const border = borderChar.repeat(termWidth);
 
   // Top border
-  writeLine(colors.cyan + border + colors.reset);
+  writeLine(uiColors.border + border + colors.reset);
   writeLine('');
 
   // ASCII art (centered)
   const artLines = asciiArt.split('\n');
   artLines.forEach(line => {
-    writeLine(colors.cyan + line + colors.reset);
+    writeLine(uiColors.primary + line + colors.reset);
   });
 
   // Subtitle if provided
   if (subtitle) {
     writeLine('');
     const padding = Math.floor((termWidth - subtitle.length) / 2);
-    writeLine(' '.repeat(padding) + colors.brightCyan + subtitle + colors.reset);
+    writeLine(' '.repeat(padding) + uiColors.accent + subtitle + colors.reset);
   }
 
   writeLine('');
 
   // Bottom border
-  writeLine(colors.cyan + border + colors.reset);
+  writeLine(uiColors.border + border + colors.reset);
 
   // Footer info (version and URL)
   if (version || url) {

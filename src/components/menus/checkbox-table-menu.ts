@@ -7,7 +7,7 @@ import { CheckboxTableMenuConfig, CheckboxTableMenuResult } from '../../types/me
 import { initTerminal, restoreTerminal, clearMenu, TerminalState } from '../../core/terminal.js';
 import { KEY_CODES, isEnter, isCtrlC, isSpace } from '../../core/keyboard.js';
 import { renderBlankLines, renderSectionLabel, renderHints, padText } from '../../core/renderer.js';
-import { colors } from '../../core/colors.js';
+import { colors, uiColors } from '../../core/colors.js';
 import { t } from '../../i18n/registry.js';
 import { calculateVirtualScroll } from '../../core/virtual-scroll.js';
 
@@ -89,7 +89,7 @@ function renderTableHeader(
     const width = columnWidths[index];
     const align = col.align || 'left';
     const paddedHeader = padText(col.header, width, align);
-    headerLine += `${colors.cyan}${colors.bold}${paddedHeader}${colors.reset}`;
+    headerLine += `${uiColors.primary}${colors.bold}${paddedHeader}${colors.reset}`;
   });
   process.stdout.write(`  ${headerLine}\n`);
   lineCount++;
@@ -97,7 +97,7 @@ function renderTableHeader(
   // Separator line
   if (showHeaderSeparator) {
     const totalWidth = checkboxWidth + columnWidths.reduce((sum, w) => sum + w, 0);
-    process.stdout.write(`  ${colors.dim}${'─'.repeat(totalWidth)}${colors.reset}\n`);
+    process.stdout.write(`  ${uiColors.separator}${'─'.repeat(totalWidth)}${colors.reset}\n`);
     lineCount++;
   }
 
@@ -123,15 +123,15 @@ function renderTableRow(
 
   // Cursor indicator with background for highlighted row
   if (isHighlighted) {
-    line += `${colors.cyan}${colors.bold}❯ ${colors.reset}`;
+    line += `${uiColors.cursor}${colors.bold}❯ ${colors.reset}`;
   } else {
     line += '  ';
   }
 
   // Checkbox
   line += isSelected
-    ? `${colors.green}◉${colors.reset} `
-    : `${colors.dim}○${colors.reset} `;
+    ? `${uiColors.selected}◉${colors.reset} `
+    : `${uiColors.disabled}○${colors.reset} `;
 
   // Table cells with background for highlighted row
   columns.forEach((col, colIndex) => {
@@ -146,13 +146,13 @@ function renderTableRow(
     // Apply color and background based on state
     if (isHighlighted) {
       // Highlighted row: cyan text with reverse video (background)
-      line += `${colors.cyan}${colors.bold}\x1b[7m${paddedValue}\x1b[27m${colors.reset}`;
+      line += `${uiColors.primary}${colors.bold}\x1b[7m${paddedValue}\x1b[27m${colors.reset}`;
     } else if (isSelected) {
       // Selected but not highlighted: normal text
-      line += `${colors.reset}${paddedValue}${colors.reset}`;
+      line += `${uiColors.textPrimary}${paddedValue}${colors.reset}`;
     } else {
       // Not selected: dim text
-      line += `${colors.dim}${paddedValue}${colors.reset}`;
+      line += `${uiColors.textSecondary}${paddedValue}${colors.reset}`;
     }
   });
 
@@ -190,6 +190,7 @@ export async function showCheckboxTableMenu(
     onExit,
     preserveOnSelect = false
   } = config;
+  const preserveOnExit = config.preserveOnExit ?? preserveOnSelect;
 
   // Validate data
   if (!data || data.length === 0) {
@@ -380,7 +381,9 @@ export async function showCheckboxTableMenu(
     const onData = (key: string) => {
       if (isCtrlC(key)) {
         state.stdin.removeListener('data', onData);
-        clearMenu(state);
+        if (!preserveOnExit) {
+          clearMenu(state);
+        }
         restoreTerminal(state);
         if (onExit) onExit();
         process.exit(0);
@@ -484,4 +487,3 @@ export async function showCheckboxTableMenu(
     state.stdin.on('data', onData);
   });
 }
-

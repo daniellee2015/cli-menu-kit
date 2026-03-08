@@ -8,6 +8,66 @@ import { writeLine } from '../../core/terminal.js';
 import { colors } from '../../core/colors.js';
 import { getTerminalWidth } from '../../core/terminal.js';
 
+function resolveColorSpec(spec?: string): string {
+  if (!spec) {
+    return '';
+  }
+
+  return spec
+    .split('+')
+    .map(part => {
+      const token = part.trim();
+      if (!token) {
+        return '';
+      }
+      const named = colors[token as keyof typeof colors];
+      if (named) {
+        return named;
+      }
+      // Accept raw ANSI sequences (e.g. values from getUIColors()).
+      if (/^\x1b\[[0-9;]*m$/.test(token)) {
+        return token;
+      }
+      return '';
+    })
+    .join('');
+}
+
+function splitLongToken(token: string, maxWidth: number): string[] {
+  if (token.length <= maxWidth) {
+    return [token];
+  }
+
+  const chunks: string[] = [];
+  let rest = token;
+  const breakChars = ['/', '\\', '-', '_', '.'];
+
+  while (rest.length > maxWidth) {
+    let breakPos = -1;
+    for (const ch of breakChars) {
+      const idx = rest.lastIndexOf(ch, maxWidth - 1);
+      if (idx > breakPos) {
+        breakPos = idx;
+      }
+    }
+
+    if (breakPos <= 0) {
+      breakPos = maxWidth;
+    } else {
+      breakPos += 1;
+    }
+
+    chunks.push(rest.slice(0, breakPos));
+    rest = rest.slice(breakPos);
+  }
+
+  if (rest.length > 0) {
+    chunks.push(rest);
+  }
+
+  return chunks;
+}
+
 /**
  * Wrap text to fit within a specific width, preserving ANSI color codes
  */
@@ -15,10 +75,16 @@ function wrapTextWithColors(text: string, maxWidth: number): string[] {
   // Extract ANSI codes and plain text
   const ansiRegex = /\x1b\[[0-9;]*m/g;
   const plainText = text.replace(ansiRegex, '');
+  const hasAnsi = /\x1b\[[0-9;]*m/.test(text);
 
   // If plain text fits, return as-is
   if (plainText.length <= maxWidth) {
     return [text];
+  }
+
+  // Fast path for plain text (no ANSI): support long token wrapping (e.g. file paths).
+  if (!hasAnsi) {
+    return wrapText(text, maxWidth);
   }
 
   // Find all ANSI codes and their positions in the original text
@@ -106,6 +172,17 @@ function wrapText(text: string, maxWidth: number): string[] {
   let currentLine = '';
 
   for (const word of words) {
+    if (word.length > maxWidth) {
+      if (currentLine) {
+        lines.push(currentLine);
+        currentLine = '';
+      }
+      const chunks = splitLongToken(word, maxWidth);
+      lines.push(...chunks.slice(0, -1));
+      currentLine = chunks[chunks.length - 1] || '';
+      continue;
+    }
+
     const testLine = currentLine ? `${currentLine} ${word}` : word;
     if (testLine.length <= maxWidth) {
       currentLine = testLine;
@@ -157,12 +234,7 @@ export function renderSummaryTable(config: SummaryTableConfig): void {
 
   // Title if provided
   if (title) {
-    // Parse color configuration (supports "color" or "color+style" format)
-    let titleColor = '';
-    if (finalColors.title) {
-      const parts = finalColors.title.split('+');
-      titleColor = parts.map(part => colors[part.trim() as keyof typeof colors] || '').join('');
-    }
+    const titleColor = resolveColorSpec(finalColors.title);
     const resetColor = titleColor ? colors.reset : '';
     let titleLine: string;
     let remainingSpace: number;
@@ -196,7 +268,7 @@ export function renderSummaryTable(config: SummaryTableConfig): void {
   sections.forEach((section, sectionIndex) => {
     // Section header if provided
     if (section.header) {
-      const headerColor = finalColors.sectionHeader ? colors[finalColors.sectionHeader as keyof typeof colors] || '' : '';
+      const headerColor = resolveColorSpec(finalColors.sectionHeader);
       const resetColor = headerColor ? colors.reset : '';
       const headerLine = `  ${headerColor}${section.header}${resetColor}`;
       const remainingSpace = boxWidth - section.header.length - 4;
@@ -215,7 +287,7 @@ export function renderSummaryTable(config: SummaryTableConfig): void {
         const wrappedLines = wrapTextWithColors(item.value, valueMaxWidth);
 
         // First line with key
-        const keyColor = finalColors.key ? colors[finalColors.key as keyof typeof colors] || '' : '';
+        const keyColor = resolveColorSpec(finalColors.key);
         const keyResetColor = keyColor ? colors.reset : '';
 
         // wrappedLines already contain colors, don't add valueColor
@@ -233,9 +305,9 @@ export function renderSummaryTable(config: SummaryTableConfig): void {
         }
       } else {
         // No wrapping needed
-        const keyColor = finalColors.key ? colors[finalColors.key as keyof typeof colors] || '' : '';
+        const keyColor = resolveColorSpec(finalColors.key);
         const keyResetColor = keyColor ? colors.reset : '';
-        const valueColor = finalColors.value ? colors[finalColors.value as keyof typeof colors] || '' : '';
+        const valueColor = resolveColorSpec(finalColors.value);
         const valueResetColor = valueColor ? colors.reset : '';
 
         // Only wrap value with color if valueColor is set, otherwise preserve original colors in item.value

@@ -7,7 +7,8 @@ import { LanguageSelectorConfig, LanguageSelectorResult } from '../../types/inpu
 import { initTerminal, restoreTerminal, clearMenu, TerminalState } from '../../core/terminal.js';
 import { KEY_CODES, isEnter, isCtrlC, isNumberKey } from '../../core/keyboard.js';
 import { renderHeader, renderOption, renderHints, renderBlankLines } from '../../core/renderer.js';
-import { colors } from '../../core/colors.js';
+import { uiColors } from '../../core/colors.js';
+import { t } from '../../i18n/registry.js';
 
 /**
  * Show a language selector
@@ -18,8 +19,9 @@ export async function showLanguageSelector(config: LanguageSelectorConfig): Prom
   const {
     languages,
     defaultLanguage,
-    prompt = '选择语言 / Select Language',
-    onExit
+    prompt = 'Select Language',
+    onExit,
+    preserveOnExit = false
   } = config;
 
   // Validate languages
@@ -43,7 +45,7 @@ export async function showLanguageSelector(config: LanguageSelectorConfig): Prom
     let lineCount = 0;
 
     // Render header
-    renderHeader(`  ${prompt}`, colors.cyan);
+    renderHeader(`  ${prompt}`, uiColors.primary);
     lineCount++;
     renderBlankLines(1);
     lineCount++;
@@ -61,7 +63,7 @@ export async function showLanguageSelector(config: LanguageSelectorConfig): Prom
     // Render hints
     renderBlankLines(1);
     lineCount++;
-    renderHints(['↑↓ 方向键', '1-9 输入序号', '⏎ 确认']);
+    renderHints([t('hints.arrows'), t('hints.numbers'), t('hints.enter')]);
     lineCount++;
 
     state.renderedLines = lineCount;
@@ -76,12 +78,14 @@ export async function showLanguageSelector(config: LanguageSelectorConfig): Prom
       // Handle Ctrl+C
       if (isCtrlC(key)) {
         state.stdin.removeListener('data', onData);
-        clearMenu(state);
+        if (!preserveOnExit) {
+          clearMenu(state);
+        }
         restoreTerminal(state);
         if (onExit) {
           onExit();
         } else {
-          console.log('\n👋 再见!');
+          console.log(`\n${t('messages.goodbye')}`);
         }
         process.exit(0);
       }

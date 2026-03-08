@@ -18,7 +18,9 @@ export {
   renderStageSeparator,
   createProgressIndicator,
   createStageHeader,
-  createStageSeparator
+  createStageSeparator,
+  renderProgressCheckmark,
+  createProgressCheckmark
 } from './progress.js';
 
 export {

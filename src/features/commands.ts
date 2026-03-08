@@ -4,7 +4,8 @@
  */
 
 import { clearScreen, writeLine } from '../core/terminal.js';
-import { colors } from '../core/colors.js';
+import { colors, uiColors } from '../core/colors.js';
+import { t } from '../i18n/registry.js';
 
 /**
  * Command handler function type
@@ -17,7 +18,7 @@ export type CommandHandler = (args?: string[]) => boolean | void;
 interface CommandRegistry {
   [command: string]: {
     handler: CommandHandler;
-    description: string;
+    descriptionKey: string;
   };
 }
 
@@ -27,34 +28,34 @@ interface CommandRegistry {
 const defaultCommands: CommandRegistry = {
   quit: {
     handler: () => {
-      writeLine('\n👋 再见!');
+      writeLine(`\n${t('messages.goodbye')}`);
       process.exit(0);
     },
-    description: '退出应用程序'
+    descriptionKey: 'commands.quit'
   },
   help: {
     handler: () => {
-      writeLine('\n可用命令:');
-      Object.entries(defaultCommands).forEach(([cmd, { description }]) => {
-        writeLine(`  ${colors.cyan}/${cmd}${colors.reset} - ${description}`);
+      writeLine(`\n${t('commands.availableCommands')}:`);
+      Object.entries(defaultCommands).forEach(([cmd, { descriptionKey }]) => {
+        writeLine(`  ${uiColors.primary}/${cmd}${colors.reset} - ${t(descriptionKey)}`);
       });
       writeLine('');
       return false; // Don't exit, continue
     },
-    description: '显示帮助信息'
+    descriptionKey: 'commands.help'
   },
   clear: {
     handler: () => {
       clearScreen();
       return false; // Don't exit, continue
     },
-    description: '清除屏幕'
+    descriptionKey: 'commands.clear'
   },
   back: {
     handler: () => {
       return true; // Signal to go back
     },
-    description: '返回上一级菜单'
+    descriptionKey: 'commands.back'
   }
 };
 
@@ -74,7 +75,7 @@ export function registerCommand(
   handler: CommandHandler,
   description: string
 ): void {
-  customCommands[command.toLowerCase()] = { handler, description };
+  customCommands[command.toLowerCase()] = { handler, descriptionKey: description };
 }
 
 /**
@@ -144,8 +145,8 @@ export function handleCommand(input: string): boolean | undefined {
   }
 
   // Unknown command
-  writeLine(`${colors.red}✗ 未知命令: /${command}${colors.reset}`);
-  writeLine(`${colors.dim}输入 /help 查看可用命令${colors.reset}\n`);
+  writeLine(`${uiColors.error}✗ ${t('messages.unknownCommand')}: /${command}${colors.reset}`);
+  writeLine(`${uiColors.textSecondary}${t('messages.helpPrompt')}${colors.reset}\n`);
   return false;
 }
 
@@ -157,13 +158,13 @@ export function getAvailableCommands(): Array<{ command: string; description: st
   const commands: Array<{ command: string; description: string }> = [];
 
   // Add default commands
-  Object.entries(defaultCommands).forEach(([cmd, { description }]) => {
-    commands.push({ command: cmd, description });
+  Object.entries(defaultCommands).forEach(([cmd, { descriptionKey }]) => {
+    commands.push({ command: cmd, description: t(descriptionKey) });
   });
 
   // Add custom commands
-  Object.entries(customCommands).forEach(([cmd, { description }]) => {
-    commands.push({ command: cmd, description });
+  Object.entries(customCommands).forEach(([cmd, { descriptionKey }]) => {
+    commands.push({ command: cmd, description: descriptionKey });
   });
 
   return commands;
@@ -173,19 +174,19 @@ export function getAvailableCommands(): Array<{ command: string; description: st
  * Show help for all commands
  */
 export function showCommandHelp(): void {
-  writeLine('\n可用命令:');
+  writeLine(`\n${t('commands.availableCommands')}:`);
 
   // Show default commands
-  writeLine(`\n${colors.cyan}默认命令:${colors.reset}`);
-  Object.entries(defaultCommands).forEach(([cmd, { description }]) => {
-    writeLine(`  ${colors.cyan}/${cmd}${colors.reset} - ${description}`);
+  writeLine(`\n${uiColors.primary}${t('commands.defaultCommands')}:${colors.reset}`);
+  Object.entries(defaultCommands).forEach(([cmd, { descriptionKey }]) => {
+    writeLine(`  ${uiColors.primary}/${cmd}${colors.reset} - ${t(descriptionKey)}`);
   });
 
   // Show custom commands if any
   if (Object.keys(customCommands).length > 0) {
-    writeLine(`\n${colors.cyan}自定义命令:${colors.reset}`);
-    Object.entries(customCommands).forEach(([cmd, { description }]) => {
-      writeLine(`  ${colors.cyan}/${cmd}${colors.reset} - ${description}`);
+    writeLine(`\n${uiColors.primary}${t('commands.customCommands')}:${colors.reset}`);
+    Object.entries(customCommands).forEach(([cmd, { descriptionKey }]) => {
+      writeLine(`  ${uiColors.primary}/${cmd}${colors.reset} - ${descriptionKey}`);
     });
   }
 

@@ -18,7 +18,7 @@ export interface RadioMenuState {
   config: RadioMenuConfig;
   selectedIndex: number;
   selectableIndices: number[];
-  optionData: Array<{ value: string; isSeparator: boolean; label?: string }>;
+  optionData: Array<{ display: string; value: string; isSeparator: boolean; label?: string }>;
   terminalState: TerminalState;
   displayPrompt: string;
   initialLineCount?: number;
@@ -51,21 +51,25 @@ export function renderRadioMenuUI(config: RadioMenuConfig): RadioMenuState {
 
   // Separate selectable options from separators
   const selectableIndices: number[] = [];
-  const optionData: Array<{ value: string; isSeparator: boolean; label?: string }> = [];
+  const optionData: Array<{ display: string; value: string; isSeparator: boolean; label?: string }> = [];
 
   options.forEach((opt, index) => {
     if (typeof opt === 'object' && 'type' in opt && opt.type === 'separator') {
-      optionData.push({ value: '', isSeparator: true, label: opt.label });
+      optionData.push({ display: '', value: '', isSeparator: true, label: opt.label });
     } else {
+      let display: string;
       let value: string;
       if (typeof opt === 'string') {
+        display = opt;
         value = opt;
       } else if ('value' in opt) {
+        display = opt.label ?? String(opt.value ?? '');
         value = opt.value ?? opt.label ?? '';
       } else {
+        display = opt.label ?? '';
         value = opt.label ?? '';
       }
-      optionData.push({ value, isSeparator: false });
+      optionData.push({ display, value, isSeparator: false });
       selectableIndices.push(index);
     }
   });
@@ -80,7 +84,7 @@ export function renderRadioMenuUI(config: RadioMenuConfig): RadioMenuState {
 
   // Render menu title if provided
   if (title) {
-    renderHeader(`  ${title}`, colors.cyan);
+    renderHeader(`  ${title}`, uiColors.primary);
     lineCount++;
     renderBlankLines(1);
     lineCount++;
@@ -91,12 +95,15 @@ export function renderRadioMenuUI(config: RadioMenuConfig): RadioMenuState {
     if (item.isSeparator) {
       renderSectionLabel(item.label, separatorWidth);
     } else {
-      const numberMatch = item.value.match(/^(\d+)\.\s*/);
-      const letterMatch = item.value.match(/^([a-zA-Z])\.\s*/);
+      const numberMatch = item.display.match(/^(\d+)\.\s*/);
+      const letterMatch = item.display.match(/^([a-zA-Z])\.\s*/);
       const prefix = (numberMatch || letterMatch) ? '' : `${selectableIndices.indexOf(index) + 1}. `;
-      const isExitOption = /\b(exit|quit)\b/i.test(item.value);
-      const displayValue = isExitOption ? `${uiColors.error}${item.value}${colors.reset}` : item.value;
-      renderOption(displayValue, undefined as any, index === selectedIndex, prefix);
+      const isExitOption = /\b(exit|quit)\b/i.test(item.display);
+      const isCurrent = index === selectedIndex;
+      const displayValue = isExitOption && !isCurrent
+        ? `${uiColors.error}${item.display}${colors.reset}`
+        : item.display;
+      renderOption(displayValue, undefined as any, isCurrent, prefix);
 
       const nextIndex = index + 1;
       if (nextIndex < optionData.length && optionData[nextIndex].isSeparator) {
@@ -166,7 +173,7 @@ export async function waitForRadioMenuInput(menuState: RadioMenuState): Promise<
 
     // Render menu title if provided
     if (config.title) {
-      renderHeader(`  ${config.title}`, colors.cyan);
+      renderHeader(`  ${config.title}`, uiColors.primary);
       lineCount++;
       renderBlankLines(1);
       lineCount++;
@@ -177,12 +184,15 @@ export async function waitForRadioMenuInput(menuState: RadioMenuState): Promise<
       if (item.isSeparator) {
         renderSectionLabel(item.label, config.separatorWidth || 30);
       } else {
-        const numberMatch = item.value.match(/^(\d+)\.\s*/);
-        const letterMatch = item.value.match(/^([a-zA-Z])\.\s*/);
+        const numberMatch = item.display.match(/^(\d+)\.\s*/);
+        const letterMatch = item.display.match(/^([a-zA-Z])\.\s*/);
         const prefix = (numberMatch || letterMatch) ? '' : `${selectableIndices.indexOf(index) + 1}. `;
-        const isExitOption = /\b(exit|quit)\b/i.test(item.value);
-        const displayValue = isExitOption ? `${uiColors.error}${item.value}${colors.reset}` : item.value;
-        renderOption(displayValue, undefined as any, index === selectedIndex, prefix);
+        const isExitOption = /\b(exit|quit)\b/i.test(item.display);
+        const isCurrent = index === selectedIndex;
+        const displayValue = isExitOption && !isCurrent
+          ? `${uiColors.error}${item.display}${colors.reset}`
+          : item.display;
+        renderOption(displayValue, undefined as any, isCurrent, prefix);
 
         const nextIndex = index + 1;
         if (nextIndex < optionData.length && optionData[nextIndex].isSeparator) {
@@ -229,7 +239,7 @@ export async function waitForRadioMenuInput(menuState: RadioMenuState): Promise<
         if (onExit) {
           onExit();
         } else {
-          console.log('\n👋 再见!');
+          console.log(`\n${t('messages.goodbye')}`);
         }
         process.exit(0);
       }
@@ -255,7 +265,7 @@ export async function waitForRadioMenuInput(menuState: RadioMenuState): Promise<
 
           restoreTerminal(state);
 
-          resolve({
+                resolve({
             value: selectedItem.value,
             index: selectableIndices.indexOf(selectedIndex)
           });
@@ -278,11 +288,11 @@ export async function waitForRadioMenuInput(menuState: RadioMenuState): Promise<
         const letter = normalizeLetter(key);
         if (letter) {
           const matchingIndex = selectableIndices.find(idx => {
-            const item = optionData[idx];
-            if (!item || item.isSeparator) return false;
-            const normalized = normalizeLetter(item.value.charAt(0));
-            return normalized === letter;
-          });
+                        const item = optionData[idx];
+                        if (!item || item.isSeparator) return false;
+                        const normalized = normalizeLetter(item.display.charAt(0));
+                        return normalized === letter;
+                    });
 
           if (matchingIndex !== undefined) {
             selectedIndex = matchingIndex;
