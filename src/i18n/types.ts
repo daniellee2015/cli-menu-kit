@@ -16,6 +16,9 @@ export interface LanguageMap {
     multiSelectPrompt: string;
     confirmPrompt: string;
     selectedCount: string;
+    yes: string;
+    no: string;
+    scrollIndicator: string;
   };
   hints: {
     arrows: string;

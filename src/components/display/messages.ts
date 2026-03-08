@@ -5,7 +5,7 @@
 
 import { MessageConfig, MessageType } from '../../types/display.types.js';
 import { writeLine } from '../../core/terminal.js';
-import { colors } from '../../core/colors.js';
+import { colors, uiColors } from '../../core/colors.js';
 
 /**
  * Render a message with icon
@@ -20,23 +20,23 @@ export function renderMessage(config: MessageConfig): void {
   switch (type) {
     case 'success':
       icon = '✓';
-      color = colors.green;
+      color = uiColors.success;
       break;
     case 'error':
       icon = '✗';
-      color = colors.red;
+      color = uiColors.error;
       break;
     case 'warning':
       icon = '⚠';
-      color = colors.yellow;
+      color = uiColors.warning;
       break;
     case 'info':
       icon = 'ℹ';
-      color = colors.blue;
+      color = uiColors.info;
       break;
     case 'question':
       icon = '?';
-      color = colors.yellow;
+      color = uiColors.warning;
       break;
   }
 

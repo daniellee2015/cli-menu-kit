@@ -4,76 +4,66 @@
  */
 
 import { RadioMenuConfig, RadioMenuResult, MenuOption } from '../../types/menu.types.js';
-import { LAYOUT_PRESETS } from '../../types/layout.types.js';
-import { initTerminal, restoreTerminal, clearMenu, TerminalState, writeLine } from '../../core/terminal.js';
+import {
+  initTerminal,
+  restoreTerminal,
+  clearMenu,
+  TerminalState,
+  writeLine,
+  countVisualLines
+} from '../../core/terminal.js';
 import { KEY_CODES, isEnter, isCtrlC, isNumberKey, isLetterKey, normalizeLetter } from '../../core/keyboard.js';
-import { renderHeader, renderOption, renderInputPrompt, renderHints, renderBlankLines, renderSectionLabel } from '../../core/renderer.js';
+import { renderHeader, renderOption, renderInputPrompt, renderBlankLines, renderSectionLabel } from '../../core/renderer.js';
+import { renderHints } from '../../core/renderer.js';
 import { colors, uiColors } from '../../core/colors.js';
 import { t } from '../../i18n/registry.js';
 
-/**
- * Generate hints based on menu configuration and actual options
- */
-function generateHints(
-  options: MenuOption[],
-  allowNumberKeys: boolean,
-  allowLetterKeys: boolean
-): string[] {
-  const hints: string[] = [];
-
-  // Count selectable options
-  const selectableCount = options.filter(opt =>
-    !(typeof opt === 'object' && 'type' in opt && opt.type === 'separator')
-  ).length;
-
-  // Only show arrow hints if there are multiple options
-  if (selectableCount > 1) {
-    hints.push(t('hints.arrows'));
+function buildSectionLabelText(label: string | undefined, width: number): string {
+  if (!label) {
+    return '';
   }
 
-  // Check if there are actually number-prefixed options
-  if (allowNumberKeys) {
-    const hasNumberOptions = options.some(opt => {
-      if (typeof opt === 'string') {
-        return /^\d+\./.test(opt);
-      }
-      return false;
-    });
-    if (hasNumberOptions) {
-      hints.push(t('hints.numbers'));
-    }
+  const labelWithPadding = ` ${label} `;
+  const dashesTotal = Math.max(0, width - labelWithPadding.length);
+  const dashesLeft = Math.floor(dashesTotal / 2);
+  const dashesRight = dashesTotal - dashesLeft;
+
+  return `  ${'─'.repeat(dashesLeft)}${labelWithPadding}${'─'.repeat(dashesRight)}`;
+}
+
+function buildOptionRenderText(
+  text: string,
+  isHighlighted: boolean,
+  prefix?: string
+): string {
+  const parts = text.split(' - ');
+  const mainText = parts[0] || '';
+  const description = parts.length > 1 ? parts.slice(1).join(' - ') : '';
+
+  let line = isHighlighted ? '❯ ' : '  ';
+  if (prefix) {
+    line += prefix;
   }
 
-  // Check if there are actually letter-prefixed options
-  if (allowLetterKeys) {
-    const hasLetterOptions = options.some(opt => {
-      if (typeof opt === 'string') {
-        return /^[a-zA-Z]\./.test(opt);
-      }
-      return false;
-    });
-    if (hasLetterOptions) {
-      hints.push(t('hints.letters'));
-    }
+  line += mainText;
+  if (description) {
+    line += ` - ${description}`;
   }
 
-  hints.push(t('hints.enter'));
-
-  return hints;
+  return line;
 }
 
 /**
  * Show a radio menu (single-select)
  * @param config - Menu configuration
+ * @param hints - Optional hints to display at the bottom (for Page Layout use)
  * @returns Promise resolving to selected option
  */
-export async function showRadioMenu(config: RadioMenuConfig): Promise<RadioMenuResult> {
+export async function showRadioMenu(config: RadioMenuConfig, hints?: string[]): Promise<RadioMenuResult> {
   const {
     options,
     title,
     prompt,
-    hints,
-    layout = LAYOUT_PRESETS.MAIN_MENU,
     defaultIndex = 0,
     allowNumberKeys = true,
     allowLetterKeys = false,
@@ -81,12 +71,10 @@ export async function showRadioMenu(config: RadioMenuConfig): Promise<RadioMenuR
     onExit,
     preserveOnSelect = false
   } = config;
+  const preserveOnExit = config.preserveOnExit ?? preserveOnSelect;
 
   // Use i18n for default prompt if not provided
   const displayPrompt = prompt || t('menus.selectPrompt');
-
-  // Generate hints dynamically if not provided
-  const displayHints = hints || generateHints(options, allowNumberKeys, allowLetterKeys);
 
   // Validate options
   if (!options || options.length === 0) {
@@ -99,27 +87,28 @@ export async function showRadioMenu(config: RadioMenuConfig): Promise<RadioMenuR
 
   // Separate selectable options from separators
   const selectableIndices: number[] = [];
-  const optionData: Array<{ value: string; isSeparator: boolean; label?: string }> = [];
+  const optionData: Array<{ display: string; value: string; isSeparator: boolean; label?: string }> = [];
 
   options.forEach((opt, index) => {
     if (typeof opt === 'object' && 'type' in opt && opt.type === 'separator') {
-      optionData.push({ value: '', isSeparator: true, label: opt.label });
+      optionData.push({ display: '', value: '', isSeparator: true, label: opt.label });
     } else {
+      let display: string;
       let value: string;
       if (typeof opt === 'string') {
+        display = opt;
         value = opt;
       } else if ('value' in opt) {
+        display = opt.label ?? String(opt.value ?? '');
         value = opt.value ?? opt.label ?? '';
       } else {
+        display = opt.label ?? '';
         value = opt.label ?? '';
       }
-      optionData.push({ value, isSeparator: false });
+      optionData.push({ display, value, isSeparator: false });
       selectableIndices.push(index);
     }
   });
-
-  // Use MINIMAL layout for single-option menus
-  const effectiveLayout = selectableIndices.length === 1 ? LAYOUT_PRESETS.MINIMAL : layout;
 
   // Ensure selectedIndex points to a selectable option
   if (!selectableIndices.includes(selectedIndex)) {
@@ -148,89 +137,79 @@ export async function showRadioMenu(config: RadioMenuConfig): Promise<RadioMenuR
   const render = () => {
     clearMenu(state);
     let lineCount = 0;
+    const addVisualLines = (text: string): void => {
+      lineCount += countVisualLines(text);
+    };
 
-    // Render based on layout order
-    effectiveLayout.order.forEach(element => {
-      // Add spacing before element
-      const spacingKey = `before${element.charAt(0).toUpperCase() + element.slice(1)}` as keyof typeof effectiveLayout.spacing;
-      if (effectiveLayout.spacing?.[spacingKey]) {
-        renderBlankLines(effectiveLayout.spacing[spacingKey]);
-        lineCount += effectiveLayout.spacing[spacingKey]!;
-      }
+    // Render title if provided
+    if (title) {
+      renderHeader(`  ${title}`, uiColors.primary);
+      addVisualLines(`  ${title}`);
+      renderBlankLines(1);
+      addVisualLines('');
+    }
 
-      switch (element) {
-        case 'header':
-          if (effectiveLayout.visible.header && title) {
-            renderHeader(`  ${title}`, colors.cyan);
-            lineCount++;
-          }
-          break;
+    // Render options
+    optionData.forEach((item, index) => {
+      if (item.isSeparator) {
+        // Render section label with configured width
+        renderSectionLabel(item.label, separatorWidth);
+        addVisualLines(buildSectionLabelText(item.label, separatorWidth));
+      } else {
+        // Check if option starts with a number or letter prefix
+        const numberMatch = item.display.match(/^(\d+)\.\s*/);
+        const letterMatch = item.display.match(/^([a-zA-Z])\.\s*/);
 
-        case 'options':
-          optionData.forEach((item, index) => {
-            if (item.isSeparator) {
-              // Render section label with configured width
-              renderSectionLabel(item.label, separatorWidth);
-            } else {
-              // Check if option starts with a number or letter prefix
-              const numberMatch = item.value.match(/^(\d+)\.\s*/);
-              const letterMatch = item.value.match(/^([a-zA-Z])\.\s*/);
+        // Don't add prefix if option already has number or letter prefix
+        const prefix = (numberMatch || letterMatch) ? '' : `${selectableIndices.indexOf(index) + 1}. `;
 
-              // Don't add prefix if option already has number or letter prefix
-              const prefix = (numberMatch || letterMatch) ? '' : `${selectableIndices.indexOf(index) + 1}. `;
+        // Check if this is an Exit option (contains "Exit", "Quit", or Chinese "退出")
+        // Keep unselected exit entries in error color, but let selected row use normal highlight style.
+        const isExitOption = /\b(exit|quit)\b|退出/i.test(item.display);
+        const isCurrent = index === selectedIndex;
+        const displayValue = isExitOption && !isCurrent
+          ? `${uiColors.error}${item.display}${colors.reset}`
+          : item.display;
 
-              // Check if this is an Exit option (contains "Exit" or "Quit")
-              const isExitOption = /\b(exit|quit)\b/i.test(item.value);
-              const displayValue = isExitOption ? `${uiColors.error}${item.value}${colors.reset}` : item.value;
+        // For radio menus, don't show selection indicator (pass undefined instead of false)
+        renderOption(displayValue, undefined as any, isCurrent, prefix);
+        addVisualLines(buildOptionRenderText(displayValue, isCurrent, prefix));
 
-              // For radio menus, don't show selection indicator (pass undefined instead of false)
-              renderOption(displayValue, undefined as any, index === selectedIndex, prefix);
-
-              // Add blank line after last item before next separator
-              const nextIndex = index + 1;
-              if (nextIndex < optionData.length && optionData[nextIndex].isSeparator) {
-                writeLine('');
-                lineCount++; // Count the blank line
-              }
-            }
-            lineCount++;
-          });
-          break;
-
-        case 'input':
-          if (effectiveLayout.visible.input) {
-            // Calculate display value (current selection number)
-            let displayValue = '';
-            const currentItem = optionData[selectedIndex];
-            if (currentItem && !currentItem.isSeparator) {
-              const match = currentItem.value.match(/^([^.]+)\./);
-              if (match) {
-                displayValue = match[1];
-              } else {
-                displayValue = String(selectableIndices.indexOf(selectedIndex) + 1);
-              }
-            }
-
-            renderInputPrompt(displayPrompt, displayValue);
-            lineCount++;
-          }
-          break;
-
-        case 'hints':
-          if (effectiveLayout.visible.hints && displayHints.length > 0) {
-            renderHints(displayHints);
-            lineCount++;
-          }
-          break;
-      }
-
-      // Add spacing after element
-      const afterSpacingKey = `after${element.charAt(0).toUpperCase() + element.slice(1)}` as keyof typeof effectiveLayout.spacing;
-      if (effectiveLayout.spacing?.[afterSpacingKey]) {
-        renderBlankLines(effectiveLayout.spacing[afterSpacingKey]);
-        lineCount += effectiveLayout.spacing[afterSpacingKey]!;
+        // Add blank line after last item before next separator
+        const nextIndex = index + 1;
+        if (nextIndex < optionData.length && optionData[nextIndex].isSeparator) {
+          writeLine('');
+          addVisualLines('');
+        }
       }
     });
+
+    // Render input prompt
+    renderBlankLines(1);
+    addVisualLines('');
+
+    // Calculate display value (current selection number)
+    let displayValue = '';
+    const currentItem = optionData[selectedIndex];
+    if (currentItem && !currentItem.isSeparator) {
+      const match = currentItem.display.match(/^([^.]+)\./);
+      if (match) {
+        displayValue = match[1];
+      } else {
+        displayValue = String(selectableIndices.indexOf(selectedIndex) + 1);
+      }
+    }
+
+    renderInputPrompt(displayPrompt, displayValue);
+    addVisualLines(`  ${displayPrompt} ${displayValue}`);
+
+    // Render hints if provided (for Page Layout footer)
+    if (hints && hints.length > 0) {
+      renderBlankLines(1);
+      addVisualLines('');
+      renderHints(hints);
+      addVisualLines(`  ${hints.join(' • ')}`);
+    }
 
     state.renderedLines = lineCount;
   };
@@ -244,12 +223,14 @@ export async function showRadioMenu(config: RadioMenuConfig): Promise<RadioMenuR
       // Handle Ctrl+C
       if (isCtrlC(key)) {
         state.stdin.removeListener('data', onData);
-        clearMenu(state);
+        if (!preserveOnExit) {
+          clearMenu(state);
+        }
         restoreTerminal(state);
         if (onExit) {
           onExit();
         } else {
-          console.log('\n👋 再见!');
+          console.log(`\n${t('messages.goodbye')}`);
         }
         process.exit(0);
       }
@@ -259,22 +240,11 @@ export async function showRadioMenu(config: RadioMenuConfig): Promise<RadioMenuR
         state.stdin.removeListener('data', onData);
         if (!preserveOnSelect) {
           clearMenu(state);
-        } else {
-          writeLine('');
         }
         restoreTerminal(state);
 
-        const selectedOption = options[selectedIndex];
-        let value: string;
-        if (typeof selectedOption === 'string') {
-          value = selectedOption;
-        } else if ('type' in selectedOption && selectedOption.type === 'separator') {
-          value = '';
-        } else if ('value' in selectedOption) {
-          value = selectedOption.value ?? selectedOption.label ?? '';
-        } else {
-          value = selectedOption.label ?? '';
-        }
+        const selectedItem = optionData[selectedIndex];
+        const value = selectedItem && !selectedItem.isSeparator ? selectedItem.value : '';
 
         resolve({
           index: selectedIndex,
@@ -312,7 +282,7 @@ export async function showRadioMenu(config: RadioMenuConfig): Promise<RadioMenuR
         const index = selectableIndices.find(idx => {
           const item = optionData[idx];
           if (item.isSeparator) return false;
-          const match = item.value.match(/^([a-zA-Z])\./i);
+          const match = item.display.match(/^([a-zA-Z])\./i);
           return match && match[1].toLowerCase() === letter;
         });
         if (index !== undefined) {

@@ -6,7 +6,8 @@
 import { NumberInputConfig, NumberInputResult } from '../../types/input.types.js';
 import { initTerminal, restoreTerminal, clearMenu, TerminalState, writeLine } from '../../core/terminal.js';
 import { isEnter, isCtrlC, isBackspace, isNumberKey } from '../../core/keyboard.js';
-import { colors } from '../../core/colors.js';
+import { colors, uiColors } from '../../core/colors.js';
+import { getCurrentLanguage, t } from '../../i18n/registry.js';
 
 /**
  * Show a number input prompt
@@ -15,6 +16,7 @@ import { colors } from '../../core/colors.js';
  */
 export async function showNumberInput(config: NumberInputConfig): Promise<NumberInputResult> {
   const {
+    lang: langInput,
     prompt,
     defaultValue,
     min,
@@ -23,8 +25,10 @@ export async function showNumberInput(config: NumberInputConfig): Promise<Number
     allowNegative = false,
     validate,
     errorMessage,
-    onExit
+    onExit,
+    preserveOnExit = false
   } = config;
+  const lang = langInput ?? getCurrentLanguage();
 
   const state = initTerminal();
   let inputValue = '';
@@ -38,20 +42,21 @@ export async function showNumberInput(config: NumberInputConfig): Promise<Number
     let promptLine = `  ${prompt}`;
     if (min !== undefined || max !== undefined) {
       const constraints = [];
-      if (min !== undefined) constraints.push(`最小: ${min}`);
-      if (max !== undefined) constraints.push(`最大: ${max}`);
-      promptLine += ` ${colors.dim}(${constraints.join(', ')})${colors.reset}`;
+      if (min !== undefined) constraints.push(`${t('inputs.minValue')}: ${min}`);
+      if (max !== undefined) constraints.push(`${t('inputs.maxValue')}: ${max}`);
+      promptLine += ` ${uiColors.textSecondary}(${constraints.join(', ')})${colors.reset}`;
     }
     if (defaultValue !== undefined && !inputValue) {
-      promptLine += ` ${colors.dim}(默认: ${defaultValue})${colors.reset}`;
+      const defaultLabel = lang === 'en' ? 'default' : t('inputs.defaultValue');
+      promptLine += ` ${uiColors.textSecondary}(${defaultLabel}: ${defaultValue})${colors.reset}`;
     }
-    promptLine += `: ${colors.cyan}${inputValue}_${colors.reset}`;
+    promptLine += `: ${uiColors.primary}${inputValue}_${colors.reset}`;
     writeLine(promptLine);
     lineCount++;
 
     // Render error message if any
     if (errorMsg) {
-      writeLine(`  ${colors.red}✗ ${errorMsg}${colors.reset}`);
+      writeLine(`  ${uiColors.error}✗ ${errorMsg}${colors.reset}`);
       lineCount++;
     }
 
@@ -67,12 +72,14 @@ export async function showNumberInput(config: NumberInputConfig): Promise<Number
       // Handle Ctrl+C
       if (isCtrlC(key)) {
         state.stdin.removeListener('data', onData);
-        clearMenu(state);
+        if (!preserveOnExit) {
+          clearMenu(state);
+        }
         restoreTerminal(state);
         if (onExit) {
           onExit();
         } else {
-          console.log('\n👋 再见!');
+          console.log(`\n${t('messages.goodbye')}`);
         }
         process.exit(0);
       }
@@ -83,7 +90,7 @@ export async function showNumberInput(config: NumberInputConfig): Promise<Number
 
         // Check if empty
         if (!finalValue) {
-          errorMsg = errorMessage || '请输入数字';
+          errorMsg = errorMessage || t('inputs.enterNumber');
           render();
           return;
         }
@@ -93,21 +100,21 @@ export async function showNumberInput(config: NumberInputConfig): Promise<Number
 
         // Check if valid number
         if (isNaN(num)) {
-          errorMsg = errorMessage || '输入必须是有效的数字';
+          errorMsg = errorMessage || t('inputs.invalidInput');
           render();
           return;
         }
 
         // Check min
         if (min !== undefined && num < min) {
-          errorMsg = errorMessage || `数字不能小于 ${min}`;
+          errorMsg = errorMessage || `${t('inputs.minValue')}: ${min}`;
           render();
           return;
         }
 
         // Check max
         if (max !== undefined && num > max) {
-          errorMsg = errorMessage || `数字不能大于 ${max}`;
+          errorMsg = errorMessage || `${t('inputs.maxValue')}: ${max}`;
           render();
           return;
         }
@@ -116,7 +123,7 @@ export async function showNumberInput(config: NumberInputConfig): Promise<Number
         if (validate) {
           const validationResult = validate(String(num));
           if (validationResult !== true) {
-            errorMsg = typeof validationResult === 'string' ? validationResult : (errorMessage || '输入无效');
+            errorMsg = typeof validationResult === 'string' ? validationResult : (errorMessage || t('inputs.invalidInput'));
             render();
             return;
           }

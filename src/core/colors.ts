@@ -56,8 +56,8 @@ export const colors = {
  */
 export const defaultUIColors = {
   // Primary elements
-  primary: colors.cyan,           // Main interactive elements, highlights
-  accent: colors.blue,            // Secondary highlights, links
+  primary: colors.reset,          // Main interactive elements, follows terminal foreground
+  accent: colors.reset,           // Secondary highlights, follows terminal foreground
 
   // Text hierarchy
   textPrimary: colors.reset,      // Main text (black/default)
@@ -68,15 +68,17 @@ export const defaultUIColors = {
   success: colors.green,          // Success states, confirmations
   error: colors.red,              // Errors, warnings, exit
   warning: colors.yellow,         // Warnings, cautions
-  info: colors.blue,              // Informational messages
+  info: colors.reset,             // Informational messages
 
   // Interactive elements
-  cursor: colors.cyan,            // Cursor indicator
-  selected: colors.green,         // Selected items
+  cursor: colors.reset,           // Cursor indicator
+  selected: colors.reset,         // Selected items
+  highlightBg: '',                // Optional background block for highlighted option
+  highlightText: colors.reset,    // Text color when highlightBg is used
   disabled: colors.dim,           // Disabled/inactive items
 
   // Structural elements
-  border: colors.cyan,            // Borders, frames
+  border: colors.brightBlack,     // Borders, frames
   separator: colors.dim,          // Separators, dividers
   prefix: colors.dim              // Number/letter prefixes
 } as const;
@@ -129,11 +131,27 @@ interface RGB {
   b: number;
 }
 
+type ColorMode = 'truecolor' | 'ansi256' | 'ansi16';
+
 /**
  * Parse ANSI color code to RGB values
  * Supports basic 8 colors and bright variants
  */
 function parseColorToRGB(colorCode: string): RGB {
+  const trueColorMatch = /^\x1b\[38;2;(\d{1,3});(\d{1,3});(\d{1,3})m$/.exec(colorCode);
+  if (trueColorMatch) {
+    return {
+      r: Math.max(0, Math.min(255, Number.parseInt(trueColorMatch[1], 10))),
+      g: Math.max(0, Math.min(255, Number.parseInt(trueColorMatch[2], 10))),
+      b: Math.max(0, Math.min(255, Number.parseInt(trueColorMatch[3], 10)))
+    };
+  }
+
+  const ansi256Match = /^\x1b\[38;5;(\d{1,3})m$/.exec(colorCode);
+  if (ansi256Match) {
+    return ansi256ToRgb(Math.max(0, Math.min(255, Number.parseInt(ansi256Match[1], 10))));
+  }
+
   // Map of ANSI codes to approximate RGB values
   const colorMap: Record<string, RGB> = {
     '\x1b[30m': { r: 0, g: 0, b: 0 },       // black
@@ -157,6 +175,52 @@ function parseColorToRGB(colorCode: string): RGB {
   return colorMap[colorCode] || { r: 170, g: 170, b: 170 };
 }
 
+function detectColorMode(colorCode: string): ColorMode {
+  if (/^\x1b\[38;2;\d{1,3};\d{1,3};\d{1,3}m$/.test(colorCode)) {
+    return 'truecolor';
+  }
+  if (/^\x1b\[38;5;\d{1,3}m$/.test(colorCode)) {
+    return 'ansi256';
+  }
+  return 'ansi16';
+}
+
+function ansi256ToRgb(code: number): RGB {
+  if (code < 16) {
+    const ansi16Map: RGB[] = [
+      { r: 0, g: 0, b: 0 },       // 0 black
+      { r: 170, g: 0, b: 0 },     // 1 red
+      { r: 0, g: 170, b: 0 },     // 2 green
+      { r: 170, g: 85, b: 0 },    // 3 yellow
+      { r: 0, g: 0, b: 170 },     // 4 blue
+      { r: 170, g: 0, b: 170 },   // 5 magenta
+      { r: 0, g: 170, b: 170 },   // 6 cyan
+      { r: 170, g: 170, b: 170 }, // 7 white
+      { r: 85, g: 85, b: 85 },    // 8 bright black
+      { r: 255, g: 85, b: 85 },   // 9 bright red
+      { r: 85, g: 255, b: 85 },   // 10 bright green
+      { r: 255, g: 255, b: 85 },  // 11 bright yellow
+      { r: 85, g: 85, b: 255 },   // 12 bright blue
+      { r: 255, g: 85, b: 255 },  // 13 bright magenta
+      { r: 85, g: 255, b: 255 },  // 14 bright cyan
+      { r: 255, g: 255, b: 255 }  // 15 bright white
+    ];
+    return ansi16Map[code];
+  }
+
+  if (code >= 16 && code <= 231) {
+    const n = code - 16;
+    const r = Math.floor(n / 36);
+    const g = Math.floor((n % 36) / 6);
+    const b = n % 6;
+    const steps = [0, 95, 135, 175, 215, 255];
+    return { r: steps[r], g: steps[g], b: steps[b] };
+  }
+
+  const gray = 8 + (code - 232) * 10;
+  return { r: gray, g: gray, b: gray };
+}
+
 /**
  * Convert RGB to ANSI 256-color code
  */
@@ -164,6 +228,13 @@ function rgbToAnsi256(r: number, g: number, b: number): string {
   // Use 256-color mode for better gradient quality
   const code = 16 + 36 * Math.round(r / 255 * 5) + 6 * Math.round(g / 255 * 5) + Math.round(b / 255 * 5);
   return `\x1b[38;5;${code}m`;
+}
+
+function rgbToAnsiTrueColor(r: number, g: number, b: number): string {
+  const rr = Math.max(0, Math.min(255, Math.round(r)));
+  const gg = Math.max(0, Math.min(255, Math.round(g)));
+  const bb = Math.max(0, Math.min(255, Math.round(b)));
+  return `\x1b[38;2;${rr};${gg};${bb}m`;
 }
 
 /**
@@ -190,12 +261,20 @@ export function createGradient(startColor: string, endColor: string, steps: numb
 
   const start = parseColorToRGB(startColor);
   const end = parseColorToRGB(endColor);
+  const startMode = detectColorMode(startColor);
+  const endMode = detectColorMode(endColor);
+  const outputMode: ColorMode =
+    startMode === 'truecolor' && endMode === 'truecolor' ? 'truecolor' : 'ansi256';
   const gradient: string[] = [];
 
   for (let i = 0; i < steps; i++) {
     const factor = i / (steps - 1);
     const rgb = interpolateRGB(start, end, factor);
-    gradient.push(rgbToAnsi256(rgb.r, rgb.g, rgb.b));
+    gradient.push(
+      outputMode === 'truecolor'
+        ? rgbToAnsiTrueColor(rgb.r, rgb.g, rgb.b)
+        : rgbToAnsi256(rgb.r, rgb.g, rgb.b)
+    );
   }
 
   return gradient;

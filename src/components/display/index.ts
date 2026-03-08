@@ -18,7 +18,9 @@ export {
   renderStageSeparator,
   createProgressIndicator,
   createStageHeader,
-  createStageSeparator
+  createStageSeparator,
+  renderProgressCheckmark,
+  createProgressCheckmark
 } from './progress.js';
 
 export {
@@ -41,3 +43,28 @@ export {
   renderHeader,
   type HeaderConfig
 } from './header.js';
+
+export {
+  renderHintsComponent,
+  createHints,
+  generateMenuHints,
+  generateInputHints,
+  HintTypes,
+  type HintsConfig
+} from './hints.js';
+
+export {
+  renderTable,
+  createTable,
+  type TableConfig,
+  type TableColumn
+} from './table.js';
+
+export {
+  renderList,
+  createList,
+  createBulletList,
+  createNumberedList,
+  type ListConfig,
+  type ListItem
+} from './list.js';

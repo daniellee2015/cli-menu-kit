@@ -7,10 +7,33 @@
 export { menuAPI as menu, inputAPI as input, wizardAPI as wizard } from './api.js';
 export { default } from './api.js';
 
+// Export Page Layout (Simple Configuration API)
+export {
+  renderPage,
+  type PageLayoutConfig,
+  type HeaderConfig as PageHeaderConfig,
+  type MainAreaConfig,
+  type FooterConfig
+} from './page-layout.js';
+
+// Export Component Factories (Legacy - for backward compatibility)
+export {
+  createFullHeaderComponent,
+  createSimpleHeaderComponent,
+  createSectionHeaderComponent,
+  createHintsComponent,
+  createTableComponent,
+  createListComponent,
+  createSummaryTableComponent,
+  createRadioMenuComponent,
+  createInputPromptComponent
+} from './component-factories.js';
+
 // Export menu components
 export {
   showRadioMenu,
   showCheckboxMenu,
+  showCheckboxTableMenu,
   showBooleanMenu
 } from './components/menus/index.js';
 
@@ -36,6 +59,8 @@ export {
   createProgressIndicator,
   createStageHeader,
   createStageSeparator,
+  renderProgressCheckmark,
+  createProgressCheckmark,
   renderMessage,
   showSuccess,
   showError,
@@ -47,7 +72,23 @@ export {
   createSummaryTable,
   createSimpleSummary,
   renderHeader,
-  type HeaderConfig
+  type HeaderConfig,
+  renderHintsComponent,
+  createHints,
+  generateMenuHints,
+  generateInputHints,
+  HintTypes,
+  type HintsConfig,
+  renderTable,
+  createTable,
+  type TableConfig,
+  type TableColumn,
+  renderList,
+  createList,
+  createBulletList,
+  createNumberedList,
+  type ListConfig,
+  type ListItem
 } from './components/display/index.js';
 
 // Export features
@@ -80,6 +121,31 @@ export {
   getCurrentLanguageMap
 } from './i18n/registry.js';
 
+// Export configuration system
+export {
+  initConfig,
+  getConfigManager,
+  loadConfig,
+  saveConfig,
+  getConfig,
+  setConfig,
+  resetConfig,
+  type UserConfig,
+  type ConfigOptions
+} from './config/user-config.js';
+
+export {
+  initLanguages,
+  loadLanguagesFromFile,
+  getLanguageManager,
+  getSupportedLanguages,
+  getLanguageConfig,
+  getDefaultLanguage,
+  getCLILanguageCode,
+  type LanguageConfig,
+  type LanguagesConfig
+} from './config/language-config.js';
+
 // Export color configuration
 export {
   colors,
@@ -94,13 +160,6 @@ export {
 } from './core/colors.js';
 
 // Export types
-export type {
-  MenuLayout,
-  LayoutElement,
-  LayoutVisibility,
-  LayoutSpacing
-} from './types/layout.types.js';
-
 export type {
   MenuOption,
   BaseMenuConfig,
@@ -142,7 +201,11 @@ export type {
 
 // Export core utilities (for advanced users)
 export { KEY_CODES } from './core/keyboard.js';
-export { LAYOUT_PRESETS } from './types/layout.types.js';
+export {
+  calculateVirtualScroll,
+  type VirtualScrollOptions,
+  type VirtualScrollResult
+} from './core/virtual-scroll.js';
 
 // Legacy exports (for backward compatibility)
 export * from './types';

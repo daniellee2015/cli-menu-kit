@@ -5,4 +5,5 @@
 
 export { showRadioMenu } from './radio-menu.js';
 export { showCheckboxMenu } from './checkbox-menu.js';
+export { showCheckboxTableMenu } from './checkbox-table-menu.js';
 export { showBooleanMenu } from './boolean-menu.js';

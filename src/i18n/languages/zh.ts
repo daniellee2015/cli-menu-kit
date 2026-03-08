@@ -9,7 +9,10 @@ export const zh: LanguageMap = {
     selectPrompt: '输入选项或用↑↓选择,回车确认',
     multiSelectPrompt: '空格选中/取消,回车确认',
     confirmPrompt: '回车确认',
-    selectedCount: '项已选'
+    selectedCount: '项已选',
+    yes: '是',
+    no: '否',
+    scrollIndicator: '第 {current}/{total} 项 | ↑↓ 滚动查看更多'
   },
   hints: {
     arrows: '↑↓ 方向键',

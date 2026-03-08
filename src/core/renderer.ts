@@ -66,14 +66,22 @@ export function renderOption(
   const parts = text.split(' - ');
   const mainText = parts[0];
   const description = parts.length > 1 ? parts.slice(1).join(' - ') : '';
+  const hasHighlightBlock = Boolean(uiColors.highlightBg);
+  const blockLead = hasHighlightBlock ? ' ' : '';
 
   if (isHighlighted) {
-    line += `${uiColors.primary}${colors.bold}${mainText}${colors.reset}`;
-    if (description) {
-      line += ` ${uiColors.textSecondary}- ${description}${colors.reset}`;
+    if (hasHighlightBlock) {
+      const highlightText = uiColors.highlightText || uiColors.textPrimary;
+      const mergedText = description ? `${mainText} - ${description}` : mainText;
+      line += `${uiColors.highlightBg}${highlightText}${colors.bold}${blockLead}${mergedText} ${colors.reset}`;
+    } else {
+      line += `${uiColors.primary}${colors.bold}${mainText}${colors.reset}`;
+      if (description) {
+        line += ` ${uiColors.textSecondary}- ${description}${colors.reset}`;
+      }
     }
   } else {
-    line += `${colors.bold}${mainText}${colors.reset}`;
+    line += `${uiColors.textPrimary}${colors.bold}${blockLead}${mainText}${colors.reset}`;
     if (description) {
       line += ` ${uiColors.textSecondary}- ${description}${colors.reset}`;
     }
@@ -93,14 +101,14 @@ export function renderInputPrompt(
   value: string,
   showCursor: boolean = false
 ): void {
-  let line = `  ${prompt} `;
+  let line = `  ${uiColors.textPrimary}${prompt}${colors.reset} `;
 
   if (value) {
-    line += `${colors.cyan}${value}${colors.reset}`;
+    line += `${uiColors.primary}${value}${colors.reset}`;
   }
 
   if (showCursor) {
-    line += `${colors.cyan}_${colors.reset}`;
+    line += `${uiColors.primary}_${colors.reset}`;
   }
 
   writeLine(line);
@@ -145,18 +153,35 @@ export function renderSeparator(char: string = '─', width?: number): void {
  * Render a section label (menu grouping)
  * @param label - Label text (optional)
  * @param width - Total width of the separator (default: 30)
+ * @param align - Alignment of the label (default: 'center')
  */
-export function renderSectionLabel(label?: string, width: number = 30): void {
+export function renderSectionLabel(label?: string, width: number = 30, align: 'left' | 'center' | 'right' = 'center'): void {
   if (label) {
-    const totalWidth = width; // Use configured width
-    const padding = 2; // Spaces around label
+    const totalWidth = width;
     const labelWithPadding = ` ${label} `;
     const labelLength = labelWithPadding.length;
     const dashesTotal = totalWidth - labelLength;
-    const dashesLeft = Math.floor(dashesTotal / 2);
-    const dashesRight = dashesTotal - dashesLeft;
 
-    const line = `  ${uiColors.separator}${'─'.repeat(dashesLeft)}${labelWithPadding}${'─'.repeat(dashesRight)}${colors.reset}`;
+    let dashesLeft: number;
+    let dashesRight: number;
+
+    switch (align) {
+      case 'left':
+        dashesLeft = 0;
+        dashesRight = dashesTotal;
+        break;
+      case 'right':
+        dashesLeft = dashesTotal;
+        dashesRight = 0;
+        break;
+      case 'center':
+      default:
+        dashesLeft = Math.floor(dashesTotal / 2);
+        dashesRight = dashesTotal - dashesLeft;
+        break;
+    }
+
+    const line = `  ${uiColors.primary}${colors.bold}${'─'.repeat(dashesLeft)}${labelWithPadding}${'─'.repeat(dashesRight)}${colors.reset}`;
     writeLine(line);
   } else {
     writeLine('');
@@ -178,23 +203,23 @@ export function renderMessage(
   switch (type) {
     case 'success':
       icon = '✓';
-      color = colors.green;
+      color = uiColors.success;
       break;
     case 'error':
       icon = '✗';
-      color = colors.red;
+      color = uiColors.error;
       break;
     case 'warning':
       icon = '⚠';
-      color = colors.yellow;
+      color = uiColors.warning;
       break;
     case 'info':
       icon = 'ℹ';
-      color = colors.blue;
+      color = uiColors.info;
       break;
     case 'question':
       icon = '?';
-      color = colors.yellow;
+      color = uiColors.warning;
       break;
   }
 
@@ -211,15 +236,15 @@ export function renderProgress(steps: string[], currentStep: number): void {
 
   steps.forEach((step, index) => {
     if (index === currentStep) {
-      parts.push(`${colors.cyan}${step}${colors.reset}`);
+      parts.push(`${uiColors.primary}${step}${colors.reset}`);
     } else if (index < currentStep) {
-      parts.push(step);
+      parts.push(`${uiColors.textPrimary}${step}${colors.reset}`);
     } else {
-      parts.push(`${colors.dim}${step}${colors.reset}`);
+      parts.push(`${uiColors.textSecondary}${step}${colors.reset}`);
     }
   });
 
-  writeLine(`  ${parts.join(` ${colors.dim}→${colors.reset} `)}`);
+  writeLine(`  ${parts.join(` ${uiColors.textSecondary}→${colors.reset} `)}`);
 }
 
 /**

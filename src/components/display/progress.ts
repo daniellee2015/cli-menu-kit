@@ -5,7 +5,7 @@
 
 import { ProgressConfig } from '../../types/display.types.js';
 import { writeLine } from '../../core/terminal.js';
-import { colors } from '../../core/colors.js';
+import { colors, uiColors } from '../../core/colors.js';
 import { getTerminalWidth } from '../../core/terminal.js';
 
 /**
@@ -88,4 +88,36 @@ export function createStageHeader(stageName: string, stepNumber: number): void {
  */
 export function createStageSeparator(char?: string, width?: number): void {
   renderStageSeparator(char, width);
+}
+
+/**
+ * Single-line completed progress marker.
+ * Use this for execution flows that print one completed step at a time.
+ */
+export function renderProgressCheckmark(
+  step: string,
+  options?: {
+    icon?: string;
+    indent?: string;
+    color?: string;
+  }
+): void {
+  const icon = options?.icon ?? '✓';
+  const indent = options?.indent ?? '  ';
+  const color = options?.color ?? uiColors.primary;
+  writeLine(`${indent}${color}${icon}${colors.reset} ${step}`);
+}
+
+/**
+ * Alias factory for renderProgressCheckmark
+ */
+export function createProgressCheckmark(
+  step: string,
+  options?: {
+    icon?: string;
+    indent?: string;
+    color?: string;
+  }
+): void {
+  renderProgressCheckmark(step, options);
 }

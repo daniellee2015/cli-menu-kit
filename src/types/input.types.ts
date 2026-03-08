@@ -6,6 +6,9 @@
  * Base input configuration
  */
 export interface BaseInputConfig {
+  /** UI language (default: current i18n language) */
+  lang?: 'zh' | 'en';
+
   /** Input prompt text */
   prompt: string;
 
@@ -20,6 +23,9 @@ export interface BaseInputConfig {
 
   /** Goodbye message function */
   onExit?: () => void;
+
+  /** Keep current input rendered on Ctrl+C exit instead of clearing (default: false) */
+  preserveOnExit?: boolean;
 }
 
 /**
@@ -75,6 +81,9 @@ export interface LanguageSelectorConfig {
 
   /** Goodbye message function */
   onExit?: () => void;
+
+  /** Keep current selector rendered on Ctrl+C exit instead of clearing (default: false) */
+  preserveOnExit?: boolean;
 }
 
 /**
@@ -98,6 +107,9 @@ export interface ModifyFieldConfig {
 
   /** Goodbye message function */
   onExit?: () => void;
+
+  /** Keep current prompt rendered on Ctrl+C exit instead of clearing (default: false) */
+  preserveOnExit?: boolean;
 }
 
 /**

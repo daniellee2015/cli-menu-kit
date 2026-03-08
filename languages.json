@@ -1,0 +1,17 @@
+{
+  "default": "en",
+  "languages": [
+    {
+      "code": "en",
+      "cliCode": "en",
+      "label": "English",
+      "nativeLabel": "English"
+    },
+    {
+      "code": "zh-CN",
+      "cliCode": "zh",
+      "label": "Chinese (Simplified)",
+      "nativeLabel": "简体中文"
+    }
+  ]
+}

@@ -6,7 +6,8 @@
 import { BooleanMenuConfig, BooleanMenuResult } from '../../types/menu.types.js';
 import { initTerminal, restoreTerminal, clearMenu, TerminalState, writeLine } from '../../core/terminal.js';
 import { KEY_CODES, isEnter, isCtrlC, normalizeLetter } from '../../core/keyboard.js';
-import { colors } from '../../core/colors.js';
+import { colors, uiColors } from '../../core/colors.js';
+import { t } from '../../i18n/registry.js';
 
 /**
  * Show a boolean menu (yes/no selection)
@@ -16,18 +17,38 @@ import { colors } from '../../core/colors.js';
 export async function showBooleanMenu(config: BooleanMenuConfig): Promise<BooleanMenuResult> {
   const {
     question,
+    helperText,
     defaultValue = true,
-    yesText = '是',
-    noText = '否',
+    yesText = t('menus.yes'),
+    noText = t('menus.no'),
     orientation = 'horizontal',
     onExit,
     preserveOnSelect = false
   } = config;
+  const preserveOnExit = config.preserveOnExit ?? preserveOnSelect;
 
   if (orientation === 'horizontal') {
-    return showBooleanMenuHorizontal(question, defaultValue, yesText, noText, onExit, preserveOnSelect);
+    return showBooleanMenuHorizontal(
+      question,
+      helperText,
+      defaultValue,
+      yesText,
+      noText,
+      onExit,
+      preserveOnSelect,
+      preserveOnExit
+    );
   } else {
-    return showBooleanMenuVertical(question, defaultValue, yesText, noText, onExit, preserveOnSelect);
+    return showBooleanMenuVertical(
+      question,
+      helperText,
+      defaultValue,
+      yesText,
+      noText,
+      onExit,
+      preserveOnSelect,
+      preserveOnExit
+    );
   }
 }
 
@@ -36,11 +57,13 @@ export async function showBooleanMenu(config: BooleanMenuConfig): Promise<Boolea
  */
 async function showBooleanMenuHorizontal(
   question: string,
+  helperText: string | undefined,
   defaultValue: boolean,
   yesText: string,
   noText: string,
   onExit?: () => void,
-  preserveOnSelect = false
+  preserveOnSelect = false,
+  preserveOnExit = false
 ): Promise<boolean> {
   const state = initTerminal();
   let selected = defaultValue;
@@ -50,14 +73,19 @@ async function showBooleanMenuHorizontal(
 
     // Render question with options on same line
     const yesOption = selected
-      ? `${colors.cyan}${yesText}${colors.reset}`
-      : `${colors.dim}${yesText}${colors.reset}`;
+      ? `${uiColors.primary}${yesText}${colors.reset}`
+      : `${uiColors.textSecondary}${yesText}${colors.reset}`;
 
     const noOption = !selected
-      ? `${colors.cyan}${noText}${colors.reset}`
-      : `${colors.dim}${noText}${colors.reset}`;
+      ? `${uiColors.primary}${noText}${colors.reset}`
+      : `${uiColors.textSecondary}${noText}${colors.reset}`;
 
-    writeLine(`${colors.yellow}?${colors.reset} ${question} ${yesOption} | ${noOption}`);
+    writeLine(`${uiColors.warning}?${colors.reset} ${question} ${yesOption} | ${noOption}`);
+    if (helperText && helperText.trim().length > 0) {
+      writeLine(`  ${uiColors.textSecondary}${helperText}${colors.reset}`);
+      state.renderedLines = 2;
+      return;
+    }
 
     state.renderedLines = 1;
   };
@@ -71,12 +99,14 @@ async function showBooleanMenuHorizontal(
       // Handle Ctrl+C
       if (isCtrlC(key)) {
         state.stdin.removeListener('data', onData);
-        clearMenu(state);
+        if (!preserveOnExit) {
+          clearMenu(state);
+        }
         restoreTerminal(state);
         if (onExit) {
           onExit();
         } else {
-          console.log('\n👋 再见!');
+          console.log(`\n${t('messages.goodbye')}`);
         }
         process.exit(0);
       }
@@ -129,11 +159,13 @@ async function showBooleanMenuHorizontal(
  */
 async function showBooleanMenuVertical(
   question: string,
+  helperText: string | undefined,
   defaultValue: boolean,
   yesText: string,
   noText: string,
   onExit?: () => void,
-  preserveOnSelect = false
+  preserveOnSelect = false,
+  preserveOnExit = false
 ): Promise<boolean> {
   const state = initTerminal();
   let selected = defaultValue;
@@ -142,20 +174,23 @@ async function showBooleanMenuVertical(
     clearMenu(state);
 
     // Render question
-    writeLine(`${colors.yellow}?${colors.reset} ${question}`);
+    writeLine(`${uiColors.warning}?${colors.reset} ${question}`);
+    if (helperText && helperText.trim().length > 0) {
+      writeLine(`  ${uiColors.textSecondary}${helperText}${colors.reset}`);
+    }
     writeLine('');
 
     // Render yes option
-    const yesCursor = selected ? `${colors.cyan}❯ ${colors.reset}` : '  ';
-    const yesColor = selected ? colors.cyan : colors.reset;
+    const yesCursor = selected ? `${uiColors.cursor}❯ ${colors.reset}` : '  ';
+    const yesColor = selected ? uiColors.primary : uiColors.textPrimary;
     writeLine(`${yesCursor}${yesColor}${yesText}${colors.reset}`);
 
     // Render no option
-    const noCursor = !selected ? `${colors.cyan}❯ ${colors.reset}` : '  ';
-    const noColor = !selected ? colors.cyan : colors.reset;
+    const noCursor = !selected ? `${uiColors.cursor}❯ ${colors.reset}` : '  ';
+    const noColor = !selected ? uiColors.primary : uiColors.textPrimary;
     writeLine(`${noCursor}${noColor}${noText}${colors.reset}`);
 
-    state.renderedLines = 4;
+    state.renderedLines = helperText && helperText.trim().length > 0 ? 5 : 4;
   };
 
   // Initial render
@@ -167,12 +202,14 @@ async function showBooleanMenuVertical(
       // Handle Ctrl+C
       if (isCtrlC(key)) {
         state.stdin.removeListener('data', onData);
-        clearMenu(state);
+        if (!preserveOnExit) {
+          clearMenu(state);
+        }
         restoreTerminal(state);
         if (onExit) {
           onExit();
         } else {
-          console.log('\n👋 再见!');
+          console.log(`\n${t('messages.goodbye')}`);
         }
         process.exit(0);
       }

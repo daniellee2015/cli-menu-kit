@@ -25,8 +25,8 @@ const colorCodes = {
 
 // Theme colors
 export const theme: Theme = {
-  active: `${colorCodes.bright}${colors.cyan}`,  // Selected item - bright cyan
-  primary: colors.cyan,                           // Standard - cyan (numbers, separators)
+  active: `${colorCodes.bright}${colors.reset}`,  // Selected item - bright default
+  primary: colors.reset,                          // Standard text color
   title: colors.reset,                            // Title - white (menu titles)
   muted: colors.gray,                             // Auxiliary - gray (descriptions, hints)
   success: colors.green,                          // Success - green
@@ -39,7 +39,7 @@ export const symbols: Symbols = {
   success: { icon: '✓', color: colors.green },
   error: { icon: 'x', color: colors.red },
   warning: { icon: '!', color: colors.yellow },
-  info: { icon: 'ℹ', color: colors.blue },
+  info: { icon: 'ℹ', color: colors.reset },
 };
 
 /**
